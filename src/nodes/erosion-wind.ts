@@ -78,14 +78,7 @@ export const WindErosionNode: NodeTypeDefinition = {
       for (let i = 0; i < map.length; i++) map[i] += deltas[i];
     }
 
-    // normalize like the other erosion nodes
-    let mn = Infinity, mx = -Infinity;
-    for (let i = 0; i < map.length; i++) {
-      if (map[i] < mn) mn = map[i];
-      if (map[i] > mx) mx = map[i];
-    }
-    const r = mx - mn || 1;
-    for (let i = 0; i < map.length; i++) map[i] = (map[i] - mn) / r;
+    // preserve incoming amplitude (no normalize) so upstream Height survives
     return h;
   }
 };

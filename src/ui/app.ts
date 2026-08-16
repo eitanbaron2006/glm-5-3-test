@@ -213,7 +213,7 @@ export class App {
       this.viewport.waterLevel = v;
       this.viewport.updateWater();
     });
-    mkSlider('Height', 0.05, 2.5, 0.01, 0.55, v => {
+    mkSlider('Height', 0.1, 4, 0.05, 1, v => {
       this.viewport.heightScale = v;
       this.rebuildViewport();
     });

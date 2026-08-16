@@ -14,7 +14,7 @@ export class Viewport {
   colorMode: ColorMode = 'biome';
   wireframe = false;
   waterLevel = 0; // 0 = disabled
-  heightScale = 0.55;
+  heightScale = 1; // neutral display multiplier (relative on top of per-node heights)
   private container: HTMLElement;
   private frameHandle = 0;
 

@@ -152,6 +152,8 @@ export const HydraulicErosionNode: NodeTypeDefinition = {
       }
     }
 
-    return h.normalize();
+    // NOTE: no normalize() here — erosion must preserve the incoming amplitude,
+    // otherwise a per-node Height scale applied upstream would be erased.
+    return h;
   }
 };

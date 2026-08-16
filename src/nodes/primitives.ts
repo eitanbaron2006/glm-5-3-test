@@ -39,7 +39,7 @@ export const MountainNode: NodeTypeDefinition = {
   outputs: [{ id: 'out', label: 'Out' }],
   params: [
     { id: 'seed', label: 'Seed', type: 'seed', default: 2025 },
-    { id: 'height', label: 'Height', type: 'slider', min: 0, max: 1, step: 0.01, default: 1 },
+    { id: 'height', label: 'Height', type: 'slider', min: 0, max: 2, step: 0.01, default: 1 },
     { id: 'x', label: 'Center X', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
     { id: 'y', label: 'Center Y', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
     { id: 'radius', label: 'Radius', type: 'slider', min: 0.15, max: 0.5, step: 0.01, default: 0.3 },
@@ -109,7 +109,7 @@ export const IslandNode: NodeTypeDefinition = {
   outputs: [{ id: 'out', label: 'Out' }],
   params: [
     { id: 'seed', label: 'Seed', type: 'seed', default: 777 },
-    { id: 'height', label: 'Height', type: 'slider', min: 0, max: 1, step: 0.01, default: 1 },
+    { id: 'height', label: 'Height', type: 'slider', min: 0, max: 2, step: 0.01, default: 1 },
     { id: 'radius', label: 'Island Radius', type: 'slider', min: 0.3, max: 0.75, step: 0.01, default: 0.52 },
     { id: 'coast', label: 'Coast Irregularity', type: 'slider', min: 0, max: 1, step: 0.02, default: 0.5 },
     { id: 'coastScale', label: 'Coast Scale', type: 'slider', min: 1, max: 6, step: 0.1, default: 2.5 },
@@ -150,7 +150,7 @@ export const RidgeNode: NodeTypeDefinition = {
   outputs: [{ id: 'out', label: 'Out' }],
   params: [
     { id: 'seed', label: 'Seed', type: 'seed', default: 4242 },
-    { id: 'height', label: 'Height', type: 'slider', min: 0, max: 1, step: 0.01, default: 1 },
+    { id: 'height', label: 'Height', type: 'slider', min: 0, max: 2, step: 0.01, default: 1 },
     { id: 'angle', label: 'Angle', type: 'slider', min: 0, max: 180, step: 1, default: 25, integer: true },
     { id: 'length', label: 'Length', type: 'slider', min: 0.3, max: 1.4, step: 0.02, default: 1.1 },
     { id: 'width', label: 'Width', type: 'slider', min: 0.06, max: 0.45, step: 0.01, default: 0.18 },
@@ -195,7 +195,7 @@ export const PeaksNode: NodeTypeDefinition = {
   outputs: [{ id: 'out', label: 'Out' }],
   params: [
     { id: 'seed', label: 'Seed', type: 'seed', default: 99 },
-    { id: 'height', label: 'Height', type: 'slider', min: 0, max: 1, step: 0.01, default: 1 },
+    { id: 'height', label: 'Height', type: 'slider', min: 0, max: 2, step: 0.01, default: 1 },
     { id: 'count', label: 'Peak Count', type: 'slider', min: 1, max: 10, step: 1, default: 1, integer: true },
     { id: 'spread', label: 'Cluster Spread', type: 'slider', min: 0.02, max: 0.42, step: 0.01, default: 0.1 },
     { id: 'falloff', label: 'Falloff', type: 'slider', min: 1, max: 4, step: 0.05, default: 2 },
@@ -238,7 +238,7 @@ export const CraterNode: NodeTypeDefinition = {
   outputs: [{ id: 'out', label: 'Out' }],
   params: [
     { id: 'seed', label: 'Seed', type: 'seed', default: 11 },
-    { id: 'height', label: 'Height', type: 'slider', min: 0, max: 1, step: 0.01, default: 1 },
+    { id: 'height', label: 'Height', type: 'slider', min: 0, max: 2, step: 0.01, default: 1 },
     { id: 'x', label: 'Center X', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
     { id: 'y', label: 'Center Y', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
     { id: 'radius', label: 'Radius', type: 'slider', min: 0.05, max: 0.45, step: 0.01, default: 0.25 },
@@ -275,7 +275,7 @@ export const CanyonNode: NodeTypeDefinition = {
   outputs: [{ id: 'out', label: 'Out' }],
   params: [
     { id: 'seed', label: 'Seed', type: 'seed', default: 606 },
-    { id: 'height', label: 'Height', type: 'slider', min: 0, max: 1, step: 0.01, default: 1 },
+    { id: 'height', label: 'Height', type: 'slider', min: 0, max: 2, step: 0.01, default: 1 },
     { id: 'scale', label: 'Feature Scale', type: 'slider', min: 1, max: 8, step: 0.1, default: 2 },
     { id: 'meander', label: 'Meander', type: 'slider', min: 0, max: 0.35, step: 0.01, default: 0.2 },
     { id: 'width', label: 'Channel Width', type: 'slider', min: 0.01, max: 0.15, step: 0.005, default: 0.05 },
@@ -311,7 +311,7 @@ export const DunesNode: NodeTypeDefinition = {
   outputs: [{ id: 'out', label: 'Out' }],
   params: [
     { id: 'seed', label: 'Seed', type: 'seed', default: 311 },
-    { id: 'height', label: 'Height', type: 'slider', min: 0, max: 1, step: 0.01, default: 1 },
+    { id: 'height', label: 'Height', type: 'slider', min: 0, max: 2, step: 0.01, default: 1 },
     { id: 'wavelength', label: 'Wavelength', type: 'slider', min: 0.02, max: 0.25, step: 0.005, default: 0.12 },
     { id: 'direction', label: 'Direction', type: 'slider', min: 0, max: 180, step: 1, default: 15, integer: true },
     { id: 'warp', label: 'Domain Warp', type: 'slider', min: 0, max: 1, step: 0.02, default: 0.6 },
@@ -348,7 +348,7 @@ export const VolcanoNode: NodeTypeDefinition = {
   outputs: [{ id: 'out', label: 'Out' }],
   params: [
     { id: 'seed', label: 'Seed', type: 'seed', default: 5 },
-    { id: 'height', label: 'Height', type: 'slider', min: 0, max: 1, step: 0.01, default: 1 },
+    { id: 'height', label: 'Height', type: 'slider', min: 0, max: 2, step: 0.01, default: 1 },
     { id: 'x', label: 'Center X', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
     { id: 'y', label: 'Center Y', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
     { id: 'radius', label: 'Radius', type: 'slider', min: 0.1, max: 0.5, step: 0.01, default: 0.36 },
@@ -385,7 +385,7 @@ export const MesaNode: NodeTypeDefinition = {
   outputs: [{ id: 'out', label: 'Out' }],
   params: [
     { id: 'seed', label: 'Seed', type: 'seed', default: 88 },
-    { id: 'height', label: 'Height', type: 'slider', min: 0, max: 1, step: 0.01, default: 1 },
+    { id: 'height', label: 'Height', type: 'slider', min: 0, max: 2, step: 0.01, default: 1 },
     { id: 'scale', label: 'Feature Scale', type: 'slider', min: 0.5, max: 8, step: 0.1, default: 1.8 },
     { id: 'octaves', label: 'Octaves', type: 'slider', min: 1, max: 10, step: 1, default: 5, integer: true },
     { id: 'levels', label: 'Levels', type: 'slider', min: 2, max: 14, step: 1, default: 6, integer: true },
