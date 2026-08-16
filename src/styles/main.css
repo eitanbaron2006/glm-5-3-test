@@ -118,9 +118,49 @@ select:focus { border-color: var(--accent2); }
 /* ============ Main area ============ */
 .main {
   display: grid;
-  grid-template-columns: 216px minmax(340px, 1.15fr) minmax(300px, 1fr) 288px;
+  grid-template-columns: var(--pal-w, 216px) 6px 1fr 6px var(--props-w, 288px);
   min-height: 0;
 }
+
+/* resizable splitters */
+.splitter {
+  background: var(--border);
+  flex-shrink: 0;
+  transition: background 0.12s;
+}
+.splitter.v {
+  width: 6px;
+  cursor: col-resize;
+}
+.splitter.h {
+  width: 6px;
+  cursor: col-resize;
+}
+.center.stacked .splitter.h {
+  width: auto;
+  height: 6px;
+  cursor: row-resize;
+}
+.splitter:hover,
+.splitter.dragging {
+  background: var(--accent);
+}
+
+/* center holds graph + viewport (side-by-side or stacked) */
+.center {
+  display: flex;
+  flex-direction: row;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.center.stacked {
+  flex-direction: column;
+}
+#pane-graph { flex: 0 0 var(--graph-size, 50%); }
+#pane-view  { flex: 1 1 0; }
+.center.stacked #pane-graph { flex: 0 0 var(--graph-size, 50%); }
+.center.stacked #pane-view  { flex: 1 1 0; }
 
 .palette {
   background: var(--panel);

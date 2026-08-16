@@ -70,19 +70,27 @@ export class App {
         </div>
         <div class="spacer"></div>
         <div class="tb-group"><button id="btn-fit" title="Fit graph to view">⤢ Fit</button></div>
+        <div class="tb-group">
+          <button id="btn-layout" title="Toggle layout: side-by-side / graph below viewport">▦ Layout</button>
+        </div>
       </header>
-      <div class="main">
+      <div class="main" id="main">
         <aside class="palette" id="palette"></aside>
-        <section class="pane">
-          <div class="pane-header">Node Graph</div>
-          <div class="pane-body" id="graph-body"></div>
-        </section>
-        <section class="pane">
-          <div class="pane-header">3D Viewport</div>
-          <div class="pane-body" id="viewport-body">
-            <div class="viewport-overlay" id="vp-controls"></div>
-          </div>
-        </section>
+        <div class="splitter v" id="split-pal"></div>
+        <div class="center" id="center">
+          <section class="pane" id="pane-graph">
+            <div class="pane-header">Node Graph</div>
+            <div class="pane-body" id="graph-body"></div>
+          </section>
+          <div class="splitter h" id="split-center"></div>
+          <section class="pane" id="pane-view">
+            <div class="pane-header">3D Viewport</div>
+            <div class="pane-body" id="viewport-body">
+              <div class="viewport-overlay" id="vp-controls"></div>
+            </div>
+          </section>
+        </div>
+        <div class="splitter v" id="split-props"></div>
         <aside class="properties" id="props"></aside>
       </div>
       <footer class="statusbar">
@@ -115,9 +123,88 @@ export class App {
 
     this.bindToolbar();
     this.bindKeys();
+    this.bindLayout();
     this.loadPreset(0);
     this.props.show(null);
     window.addEventListener('resize', () => this.viewport.resize());
+  }
+
+  /* ---------- resizable panels + layout toggle ---------- */
+  private bindLayout() {
+    const rootStyle = document.documentElement.style;
+    const main = document.getElementById('main')!;
+    const center = document.getElementById('center')!;
+    const pal = document.getElementById('palette')!;
+    const props = document.getElementById('props')!;
+    const splitPal = document.getElementById('split-pal')!;
+    const splitProps = document.getElementById('split-props')!;
+    const splitCenter = document.getElementById('split-center')!;
+
+    const onResize = () => this.viewport.resize();
+
+    const makeDrag = (
+      handle: HTMLElement,
+      onMove: (e: PointerEvent) => void
+    ) => {
+      handle.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        handle.classList.add('dragging');
+        handle.setPointerCapture(e.pointerId);
+        const move = (ev: PointerEvent) => { onMove(ev); onResize(); };
+        const up = (ev: PointerEvent) => {
+          handle.classList.remove('dragging');
+          handle.removeEventListener('pointermove', move);
+          handle.removeEventListener('pointerup', up);
+          try { handle.releasePointerCapture(ev.pointerId); } catch { /* ignore */ }
+          onResize();
+        };
+        handle.addEventListener('pointermove', move);
+        handle.addEventListener('pointerup', up);
+      });
+    };
+
+    // palette width (drag right = wider)
+    makeDrag(splitPal, e => {
+      const w = e.clientX - pal.getBoundingClientRect().left;
+      const nw = Math.max(140, Math.min(400, w));
+      rootStyle.setProperty('--pal-w', nw + 'px');
+    });
+
+    // properties width (drag left = wider)
+    makeDrag(splitProps, e => {
+      const r = props.getBoundingClientRect();
+      const w = r.right - e.clientX;
+      const nw = Math.max(200, Math.min(480, w));
+      rootStyle.setProperty('--props-w', nw + 'px');
+    });
+
+    // center split: graph vs viewport (works for side-by-side and stacked)
+    makeDrag(splitCenter, e => {
+      const rect = center.getBoundingClientRect();
+      const stacked = center.classList.contains('stacked');
+      // In side-by-side the graph is on the LEFT (size = fraction from left).
+      // In stacked it's at the BOTTOM (size = fraction from bottom = 1 - frac).
+      const frac = stacked
+        ? 1 - (e.clientY - rect.top) / rect.height
+        : (e.clientX - rect.left) / rect.width;
+      const pct = Math.max(20, Math.min(80, frac * 100));
+      rootStyle.setProperty('--graph-size', pct + '%');
+    });
+
+    // layout toggle: side-by-side <-> graph below viewport
+    const layoutBtn = document.getElementById('btn-layout')!;
+    const graphPane = document.getElementById('pane-graph')!;
+    const viewPane = document.getElementById('pane-view')!;
+    layoutBtn.addEventListener('click', () => {
+      const stacked = center.classList.toggle('stacked');
+      // side-by-side: graph | viewport ; stacked: viewport on top, graph below
+      if (stacked) {
+        center.append(viewPane, splitCenter, graphPane);
+      } else {
+        center.append(graphPane, splitCenter, viewPane);
+      }
+      onResize();
+    });
   }
 
   private initEditor(graph: Graph, resetHistory = true) {
