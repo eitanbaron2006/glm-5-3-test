@@ -15,6 +15,8 @@ export const GradientNode: NodeTypeDefinition = {
   inputs: [],
   outputs: [{ id: 'out', label: 'Out' }],
   params: [
+    { id: 'x', label: 'Center X', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
+    { id: 'y', label: 'Center Y', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
     { id: 'angle', label: 'Angle', type: 'slider', min: 0, max: 360, step: 1, default: 0 },
     { id: 'start', label: 'Start Value', type: 'slider', min: 0, max: 1, step: 0.01, default: 0 },
     { id: 'end', label: 'End Value', type: 'slider', min: 0, max: 1, step: 0.01, default: 1 },
@@ -26,8 +28,8 @@ export const GradientNode: NodeTypeDefinition = {
     const dx = Math.sin(rad), dy = -Math.cos(rad);
     for (let y = 0; y < s; y++) {
       for (let x = 0; x < s; x++) {
-        const u = x / (s - 1) * 2 - 1;
-        const v = y / (s - 1) * 2 - 1;
+        const u = x / (s - 1) * 2 - 1 - (p.x * 2 - 1);
+        const v = y / (s - 1) * 2 - 1 - (p.y * 2 - 1);
         const t = (u * dx + v * dy) / 2 + 0.5;
         h.set(x, y, p.start + (p.end - p.start) * Math.min(Math.max(t, 0), 1));
       }
@@ -44,6 +46,8 @@ export const RadialGradientNode: NodeTypeDefinition = {
   inputs: [],
   outputs: [{ id: 'out', label: 'Out' }],
   params: [
+    { id: 'x', label: 'Center X', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
+    { id: 'y', label: 'Center Y', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
     { id: 'falloff', label: 'Falloff', type: 'slider', min: 0.1, max: 4, step: 0.05, default: 1.6 },
     { id: 'peak', label: 'Peak', type: 'slider', min: 0, max: 1, step: 0.01, default: 1 },
   ],
@@ -52,8 +56,8 @@ export const RadialGradientNode: NodeTypeDefinition = {
     const h = new Heightmap(s);
     for (let y = 0; y < s; y++) {
       for (let x = 0; x < s; x++) {
-        const u = x / (s - 1) * 2 - 1;
-        const v = y / (s - 1) * 2 - 1;
+        const u = x / (s - 1) * 2 - 1 - (p.x * 2 - 1);
+        const v = y / (s - 1) * 2 - 1 - (p.y * 2 - 1);
         const d = Math.sqrt(u * u + v * v) / Math.SQRT2;
         h.set(x, y, Math.max(0, p.peak * (1 - Math.pow(d, p.falloff))));
       }
@@ -71,6 +75,8 @@ export const ConstantNode: NodeTypeDefinition = {
   outputs: [{ id: 'out', label: 'Out' }],
   params: [
     { id: 'value', label: 'Value', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
+    { id: 'x', label: 'Center X', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
+    { id: 'y', label: 'Center Y', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
   ],
   compute(_inputs, p, ctx) {
     const h = new Heightmap(makeSize(ctx.size));

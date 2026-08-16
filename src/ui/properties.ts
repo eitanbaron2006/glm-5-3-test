@@ -12,6 +12,10 @@ export class PropertiesPanel {
     private onDuplicate: () => void
   ) {}
 
+  /** Set by App: viewport drag-to-move for nodes exposing Center X/Y. */
+  onToggleMove: ((id: string) => void) | null = null;
+  isMoving: ((id: string) => boolean) | null = null;
+
   show(nodeId: string | null) {
     const c = this.container;
     c.textContent = '';
@@ -168,6 +172,17 @@ export class PropertiesPanel {
 
     const actions = document.createElement('div');
     actions.className = 'prop-actions';
+    // viewport drag-to-move for nodes that expose Center X/Y
+    const hasXY = def.params.some(q => q.id === 'x') && def.params.some(q => q.id === 'y');
+    if (hasXY && this.onToggleMove) {
+      const mv = document.createElement('button');
+      const active = this.isMoving ? this.isMoving(node.id) : false;
+      mv.textContent = active ? '🎯 Moving… click to stop' : '🎯 Move in viewport';
+      mv.title = 'Drag the element in the 3D viewport to set Center X/Y';
+      if (active) mv.classList.add('toggled');
+      mv.addEventListener('click', () => this.onToggleMove!(node.id));
+      actions.appendChild(mv);
+    }
     const dup = document.createElement('button');
     dup.textContent = 'Duplicate';
     dup.title = 'Ctrl+D';

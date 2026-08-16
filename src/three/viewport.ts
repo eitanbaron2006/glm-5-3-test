@@ -178,6 +178,29 @@ export class Viewport {
     this.colorMode = mode;
   }
 
+  /* ---------- move-mode picking ---------- */
+  /** Toggle drag-to-move: disables orbit so the pointer drags the element. */
+  setPickMode(on: boolean) {
+    this.controls.enabled = !on;
+    this.renderer.domElement.style.cursor = on ? 'move' : '';
+  }
+
+  /** Raycast a screen point onto the terrain base plane (y=0) -> heightmap UV in [0,1]. */
+  pickUV(clientX: number, clientY: number): { u: number; v: number } | null {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return null;
+    const nx = ((clientX - rect.left) / rect.width) * 2 - 1;
+    const ny = -((clientY - rect.top) / rect.height) * 2 + 1;
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(new THREE.Vector2(nx, ny), this.camera);
+    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    const pt = new THREE.Vector3();
+    if (!ray.ray.intersectPlane(plane, pt)) return null;
+    const u = (pt.x + 1) / 2, v = (1 - pt.z) / 2;
+    if (u < 0 || u > 1 || v < 0 || v > 1) return null;
+    return { u, v };
+  }
+
   dispose() {
     cancelAnimationFrame(this.frameHandle);
     this.controls.dispose();

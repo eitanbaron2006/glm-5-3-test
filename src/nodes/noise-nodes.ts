@@ -14,6 +14,8 @@ export const NoiseNode: NodeTypeDefinition = {
   outputs: [{ id: 'out', label: 'Out' }],
   params: [
     { id: 'seed', label: 'Seed', type: 'seed', default: 1337 },
+    { id: 'x', label: 'Center X', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
+    { id: 'y', label: 'Center Y', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
     {
       id: 'type', label: 'Type', type: 'select', default: 'perlin',
       options: [
@@ -41,7 +43,7 @@ export const NoiseNode: NodeTypeDefinition = {
     for (let y = 0; y < s; y++) {
       for (let x = 0; x < s; x++) {
         const u = x / (s - 1), v = y / (s - 1);
-        let nx = u * p.scale, ny = v * p.scale;
+        let nx = (u + (p.x - 0.5)) * p.scale, ny = (v + (p.y - 0.5)) * p.scale;
         if (warpFBM) {
           const wx = warpFBM.sample(nx * p.warpScale + 31.4, ny * p.warpScale);
           const wy = warpFBM.sample(nx * p.warpScale - 47.2, ny * p.warpScale + 12.9);
@@ -64,6 +66,8 @@ export const VoronoiNode: NodeTypeDefinition = {
   outputs: [{ id: 'out', label: 'Out' }],
   params: [
     { id: 'seed', label: 'Seed', type: 'seed', default: 42 },
+    { id: 'x', label: 'Center X', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
+    { id: 'y', label: 'Center Y', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
     {
       id: 'feature', label: 'Feature', type: 'select', default: 'f1',
       options: [
@@ -82,7 +86,7 @@ export const VoronoiNode: NodeTypeDefinition = {
     const feat = p.feature as VoronoiFeature;
     for (let y = 0; y < s; y++) {
       for (let x = 0; x < s; x++) {
-        h.set(x, y, voronoi(x / (s - 1), y / (s - 1), p.frequency, p.seed, feat));
+        h.set(x, y, voronoi(x / (s - 1) + (p.x - 0.5), y / (s - 1) + (p.y - 0.5), p.frequency, p.seed, feat));
       }
     }
     if (p.smooth > 0.01) {

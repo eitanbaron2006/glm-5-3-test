@@ -110,6 +110,8 @@ export const IslandNode: NodeTypeDefinition = {
   params: [
     { id: 'seed', label: 'Seed', type: 'seed', default: 777 },
     { id: 'height', label: 'Height', type: 'slider', min: 0, max: 2, step: 0.01, default: 1 },
+    { id: 'x', label: 'Center X', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
+    { id: 'y', label: 'Center Y', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
     { id: 'radius', label: 'Island Radius', type: 'slider', min: 0.3, max: 0.75, step: 0.01, default: 0.52 },
     { id: 'coast', label: 'Coast Irregularity', type: 'slider', min: 0, max: 1, step: 0.02, default: 0.5 },
     { id: 'coastScale', label: 'Coast Scale', type: 'slider', min: 1, max: 6, step: 0.1, default: 2.5 },
@@ -124,8 +126,8 @@ export const IslandNode: NodeTypeDefinition = {
     const R = p.radius * 2; // radius is relative to the half-width
     for (let y = 0; y < s; y++) {
       for (let x = 0; x < s; x++) {
-        const u = x / (s - 1) * 2 - 1;
-        const v = y / (s - 1) * 2 - 1;
+        const u = x / (s - 1) * 2 - 1 - (p.x * 2 - 1);
+        const v = y / (s - 1) * 2 - 1 - (p.y * 2 - 1);
         // domain warp bends the coastline into bays & peninsulas
         const wx = warp.sample(u * p.coastScale + 31, v * p.coastScale) * p.coast * 0.3;
         const wy = warp.sample(u * p.coastScale, v * p.coastScale + 77) * p.coast * 0.3;
@@ -151,6 +153,8 @@ export const RidgeNode: NodeTypeDefinition = {
   params: [
     { id: 'seed', label: 'Seed', type: 'seed', default: 4242 },
     { id: 'height', label: 'Height', type: 'slider', min: 0, max: 2, step: 0.01, default: 1 },
+    { id: 'x', label: 'Center X', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
+    { id: 'y', label: 'Center Y', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
     { id: 'angle', label: 'Angle', type: 'slider', min: 0, max: 180, step: 1, default: 25, integer: true },
     { id: 'length', label: 'Length', type: 'slider', min: 0.3, max: 1.4, step: 0.02, default: 1.1 },
     { id: 'width', label: 'Width', type: 'slider', min: 0.06, max: 0.45, step: 0.01, default: 0.18 },
@@ -167,8 +171,8 @@ export const RidgeNode: NodeTypeDefinition = {
     const ca = Math.cos(rad), sa = Math.sin(rad);
     for (let y = 0; y < s; y++) {
       for (let x = 0; x < s; x++) {
-        const u = x / (s - 1) * 2 - 1;
-        const v = y / (s - 1) * 2 - 1;
+        const u = x / (s - 1) * 2 - 1 - (p.x * 2 - 1);
+        const v = y / (s - 1) * 2 - 1 - (p.y * 2 - 1);
         const along = u * ca + v * sa;           // coordinate along the crest
         const perp = -u * sa + v * ca;           // coordinate across the crest
         // gentle meander so the ridge snakes instead of being ruler-straight
@@ -196,6 +200,8 @@ export const PeaksNode: NodeTypeDefinition = {
   params: [
     { id: 'seed', label: 'Seed', type: 'seed', default: 99 },
     { id: 'height', label: 'Height', type: 'slider', min: 0, max: 2, step: 0.01, default: 1 },
+    { id: 'x', label: 'Center X', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
+    { id: 'y', label: 'Center Y', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
     { id: 'count', label: 'Peak Count', type: 'slider', min: 1, max: 10, step: 1, default: 1, integer: true },
     { id: 'spread', label: 'Cluster Spread', type: 'slider', min: 0.02, max: 0.42, step: 0.01, default: 0.1 },
     { id: 'falloff', label: 'Falloff', type: 'slider', min: 1, max: 4, step: 0.05, default: 2 },
@@ -217,7 +223,7 @@ export const PeaksNode: NodeTypeDefinition = {
         const u = x / (s - 1), v = y / (s - 1);
         let best = 0;
         for (let i = 0; i < p.count; i++) {
-          const dx = u - px[i], dy = v - py[i];
+          const dx = u - px[i] - (p.x - 0.5), dy = v - py[i] - (p.y - 0.5);
           const d = Math.sqrt(dx * dx + dy * dy) / pr[i];
           const val = ph[i] * Math.pow(Math.max(0, 1 - d), p.falloff);
           if (val > best) best = val;
@@ -276,6 +282,8 @@ export const CanyonNode: NodeTypeDefinition = {
   params: [
     { id: 'seed', label: 'Seed', type: 'seed', default: 606 },
     { id: 'height', label: 'Height', type: 'slider', min: 0, max: 2, step: 0.01, default: 1 },
+    { id: 'x', label: 'Center X', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
+    { id: 'y', label: 'Center Y', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
     { id: 'scale', label: 'Feature Scale', type: 'slider', min: 1, max: 8, step: 0.1, default: 2 },
     { id: 'meander', label: 'Meander', type: 'slider', min: 0, max: 0.35, step: 0.01, default: 0.2 },
     { id: 'width', label: 'Channel Width', type: 'slider', min: 0.01, max: 0.15, step: 0.005, default: 0.05 },
@@ -289,7 +297,7 @@ export const CanyonNode: NodeTypeDefinition = {
     const meander = new FBM(p.seed + 77, 3, 2, 0.5, 'perlin');
     for (let y = 0; y < s; y++) {
       for (let x = 0; x < s; x++) {
-        const u = x / (s - 1), v = y / (s - 1);
+        const u = x / (s - 1) + (p.x - 0.5), v = y / (s - 1) + (p.y - 0.5);
         const n = fbm.sample(u * p.scale, v * p.scale) * 0.5 + 0.5;
         const c = 0.5 + (meander.sample(u * 3 + 40, 8.2) * 0.5 + 0.5 - 0.5) * 2 * p.meander;
         const dist = Math.abs(v - c);
@@ -312,6 +320,8 @@ export const DunesNode: NodeTypeDefinition = {
   params: [
     { id: 'seed', label: 'Seed', type: 'seed', default: 311 },
     { id: 'height', label: 'Height', type: 'slider', min: 0, max: 2, step: 0.01, default: 1 },
+    { id: 'x', label: 'Center X', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
+    { id: 'y', label: 'Center Y', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
     { id: 'wavelength', label: 'Wavelength', type: 'slider', min: 0.02, max: 0.25, step: 0.005, default: 0.12 },
     { id: 'direction', label: 'Direction', type: 'slider', min: 0, max: 180, step: 1, default: 15, integer: true },
     { id: 'warp', label: 'Domain Warp', type: 'slider', min: 0, max: 1, step: 0.02, default: 0.6 },
@@ -326,7 +336,7 @@ export const DunesNode: NodeTypeDefinition = {
     const sa = Math.sin(rad), ca = Math.cos(rad);
     for (let y = 0; y < s; y++) {
       for (let x = 0; x < s; x++) {
-        const u = x / (s - 1), v = y / (s - 1);
+        const u = x / (s - 1) + (p.x - 0.5), v = y / (s - 1) + (p.y - 0.5);
         const proj = u * sa + v * ca;
         const off = (warp.sample(u * 3, v * 3) * 0.5 + 0.5 - 0.5) * p.warp * 2;
         const ph = (proj / p.wavelength + off) * Math.PI * 2;
@@ -386,6 +396,8 @@ export const MesaNode: NodeTypeDefinition = {
   params: [
     { id: 'seed', label: 'Seed', type: 'seed', default: 88 },
     { id: 'height', label: 'Height', type: 'slider', min: 0, max: 2, step: 0.01, default: 1 },
+    { id: 'x', label: 'Center X', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
+    { id: 'y', label: 'Center Y', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
     { id: 'scale', label: 'Feature Scale', type: 'slider', min: 0.5, max: 8, step: 0.1, default: 1.8 },
     { id: 'octaves', label: 'Octaves', type: 'slider', min: 1, max: 10, step: 1, default: 5, integer: true },
     { id: 'levels', label: 'Levels', type: 'slider', min: 2, max: 14, step: 1, default: 6, integer: true },
@@ -399,7 +411,7 @@ export const MesaNode: NodeTypeDefinition = {
     const lo = 1 - p.smooth, hi = p.smooth;
     for (let y = 0; y < s; y++) {
       for (let x = 0; x < s; x++) {
-        const u = x / (s - 1), v = y / (s - 1);
+        const u = x / (s - 1) + (p.x - 0.5), v = y / (s - 1) + (p.y - 0.5);
         const n = fbm.sample(u * p.scale, v * p.scale) * 0.5 + 0.5;
         const k = Math.floor(n / step);
         const f = (n - k * step) / step;

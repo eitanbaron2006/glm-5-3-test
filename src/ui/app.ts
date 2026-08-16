@@ -34,6 +34,9 @@ export class App {
   // GAEA-style undo/redo graph history
   private history = new History();
   private paramHistTimer: number | null = null;
+  // viewport drag-to-move: which node's Center X/Y the pointer is driving
+  private moveNodeId: string | null = null;
+  private moveDragging = false;
 
   constructor(private root: HTMLElement) {
     this.engine = new GraphEngine(this.graph);
@@ -107,6 +110,8 @@ export class App {
       () => this.editor.deleteSelection(),
       () => this.duplicateSelected()
     );
+    this.props.onToggleMove = id => this.setMoveMode(this.moveNodeId === id ? null : id);
+    this.props.isMoving = id => this.moveNodeId === id;
 
     this.bindToolbar();
     this.bindKeys();
@@ -127,6 +132,9 @@ export class App {
     const prevView = this.editor ? { ...this.editor.view } : null;
 
     this.graph = graph;
+    // leaving any previous graph invalidates an active viewport move session
+    this.moveNodeId = null;
+    if (this.viewport) this.viewport.setPickMode(false);
     // fresh graph loaded: restart history with this state as the base snapshot
     if (resetHistory) this.history.reset(this.graph.serialize());
     // Keep the properties panel in sync: it was constructed once with the
@@ -135,7 +143,10 @@ export class App {
     if (this.props) this.props.graph = graph;
     this.engine = new GraphEngine(graph);
     this.editor = new NodeEditor(body, graph, {
-      onSelectNode: id => this.props?.show(id),
+      onSelectNode: id => {
+        if (this.moveNodeId && this.moveNodeId !== id) this.setMoveMode(null);
+        this.props?.show(id);
+      },
       onStructureChanged: () => {
         this.history.push(this.graph.serialize());
         this.updateStatus();
@@ -217,6 +228,45 @@ export class App {
       this.viewport.heightScale = v;
       this.rebuildViewport();
     });
+
+    // ---- viewport drag-to-move (drives a node's Center X/Y) ----
+    const canvas = this.viewport.renderer.domElement;
+    canvas.addEventListener('pointerdown', e => {
+      if (!this.moveNodeId) return;
+      this.moveDragging = true;
+      canvas.setPointerCapture(e.pointerId);
+      this.applyMove(e);
+    });
+    canvas.addEventListener('pointermove', e => {
+      if (this.moveNodeId && this.moveDragging) this.applyMove(e);
+    });
+    const endMove = () => {
+      if (this.moveNodeId && this.moveDragging) {
+        this.moveDragging = false;
+        this.history.push(this.graph.serialize()); // one undo step per drag
+      }
+    };
+    canvas.addEventListener('pointerup', endMove);
+    canvas.addEventListener('pointercancel', endMove);
+  }
+
+  /** Enter/exit viewport move-mode for a node (null to exit). */
+  setMoveMode(nodeId: string | null) {
+    this.moveNodeId = nodeId;
+    this.moveDragging = false;
+    this.viewport.setPickMode(nodeId !== null);
+    if (nodeId) this.props.show(nodeId); // refresh button label
+  }
+
+  private applyMove(e: PointerEvent) {
+    const node = this.moveNodeId ? this.graph.nodes.get(this.moveNodeId) : null;
+    if (!node) return;
+    const uv = this.viewport.pickUV(e.clientX, e.clientY);
+    if (!uv) return;
+    // constrained to the Center X/Y slider range [0,1]
+    node.params.x = Math.min(1, Math.max(0, Math.round(uv.u * 100) / 100));
+    node.params.y = Math.min(1, Math.max(0, Math.round(uv.v * 100) / 100));
+    this.scheduleEval();
   }
 
   private bindToolbar() {
@@ -299,7 +349,7 @@ export class App {
         this.editor.deleteSelection();
         e.preventDefault();
       }
-      if (e.key === 'Escape') this.props.show(null);
+      if (e.key === 'Escape') { this.setMoveMode(null); this.props.show(null); }
       if (e.key.toLowerCase() === 'f') this.editor.fitView();
       if (e.key.toLowerCase() === 'b') this.scheduleEval(true);
     });
