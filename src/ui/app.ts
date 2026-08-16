@@ -252,10 +252,14 @@ export class App {
 
   /** Enter/exit viewport move-mode for a node (null to exit). */
   setMoveMode(nodeId: string | null) {
+    const prev = this.moveNodeId;
     this.moveNodeId = nodeId;
     this.moveDragging = false;
     this.viewport.setPickMode(nodeId !== null);
-    if (nodeId) this.props.show(nodeId); // refresh button label
+    // refresh the properties panel on BOTH enter and exit so the button
+    // label/state ("Move in viewport" vs "Moving…") always matches reality
+    const refreshId = nodeId ?? prev ?? this.editor?.selectedNodeId ?? null;
+    this.props.show(refreshId);
   }
 
   private applyMove(e: PointerEvent) {
@@ -349,7 +353,10 @@ export class App {
         this.editor.deleteSelection();
         e.preventDefault();
       }
-      if (e.key === 'Escape') { this.setMoveMode(null); this.props.show(null); }
+      if (e.key === 'Escape') {
+        if (this.moveNodeId) this.setMoveMode(null);
+        else this.props.show(null);
+      }
       if (e.key.toLowerCase() === 'f') this.editor.fitView();
       if (e.key.toLowerCase() === 'b') this.scheduleEval(true);
     });
