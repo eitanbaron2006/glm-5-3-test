@@ -71,12 +71,21 @@ export const HydraulicErosionNode: NodeTypeDefinition = {
     const map = h.data;
     const rand = mulberry32(p.seed * 7919 + 13);
     const brush = makeBrush(p.radius);
-    // keep erosion density roughly constant across resolutions (GAEA-like):
-    // droplet count scales with area so 256² and 4K erode identically
-    // (capped so 8K stays usable)
-    const dropFactor = Math.min((s / 512) ** 2, 8);
-    const nDrops = Math.round(p.droplets * 1000 * dropFactor);
+
+    // Resolution independence (GAEA-like): work in *physical* units.
+    // 1 pixel at size s spans 1/scale base-pixels (base = 256), so the physical
+    // slope is deltaH*scale. Droplet count scales with area and step count with
+    // scale, so 256² and 4K carve the same drainage networks.
     const scale = Math.max(1, s / 256);
+    // droplets scale with area (floored at 1 so low-res still carves, capped so 8K stays usable)
+    const dropFactor = Math.min(Math.max((s / 512) ** 2, 1), 8);
+    const nDrops = Math.round(p.droplets * 1000 * dropFactor);
+    const steps = p.lifetime;
+    // each step spans `scale` pixels so deltaH is a physical (resolution-independent) slope
+    const stepLen = scale;
+
+    const minSlope = 0.0008;
+    const maxErode = 0.02;
 
     for (let d = 0; d < nDrops; d++) {
       let px = rand() * (s - 1);
@@ -86,70 +95,63 @@ export const HydraulicErosionNode: NodeTypeDefinition = {
       let water = 1;
       let sediment = 0;
 
-      for (let life = 0; life < p.lifetime; life++) {
-        const ix = Math.floor(px), iy = Math.floor(py);
-        if (ix < 0 || iy < 0 || ix >= s - 1 || iy >= s - 1) break;
+      for (let life = 0; life < steps; life++) {
+        if (px < 1 || py < 1 || px >= s - 2 || py >= s - 2) break;
         const { gx, gy, height } = sampleGradient(h, px, py);
 
+        // Inertia: keep part of the previous heading so channels meander
+        // instead of running straight down the gradient.
         dirX = dirX * p.inertia - gx * (1 - p.inertia);
         dirY = dirY * p.inertia - gy * (1 - p.inertia);
         const len = Math.sqrt(dirX * dirX + dirY * dirY);
         if (!isFinite(len) || len < 1e-6) break;
         dirX /= len; dirY /= len;
-        px += dirX; py += dirY;
-        if (px < 0 || py < 0 || px >= s - 1 || py >= s - 1) break;
 
-        const newHeight = h.sample(px / (s - 1), py / (s - 1));
-        const deltaH = newHeight - height;
-        if (!isFinite(deltaH)) break;
-        const cap = Math.min(Math.max(-deltaH * speed * water * p.capacity * 20, 0.01), 2);
+        const nx = px + dirX * stepLen, ny = py + dirY * stepLen;
+        if (nx < 1 || ny < 1 || nx >= s - 2 || ny >= s - 2) break;
+        const newHeight = h.sample(nx / (s - 1), ny / (s - 1));
+        const deltaH = newHeight - height;          // physical height change over stepLen
+        const slope = -deltaH;                      // physical downhill slope
 
-        if (sediment > cap || deltaH > 0) {
-          const amount = deltaH > 0
-            ? Math.min(sediment, (deltaH + sediment) * p.deposit)
-            : (sediment - cap) * p.deposit;
-          sediment -= amount;
-          // deposit must be resolution-compensated exactly like the dig pass,
-          // otherwise high-res evaluations accumulate 16x mass and turn to noise
-          const dep = amount / (scale * scale);
-          const fx = px - Math.floor(px), fy = py - Math.floor(py);
-          const i00 = Math.floor(py) * s + Math.floor(px);
-          map[i00] += dep * (1 - fx) * (1 - fy);
-          map[i00 + 1] += dep * fx * (1 - fy);
-          map[i00 + s] += dep * (1 - fx) * fy;
-          map[i00 + s + 1] += dep * fx * fy;
-        } else {
-          // clamp dig amount: never excavate more than a sane fraction per step
-          const amount = Math.min(
-            Math.min((cap - sediment) * p.erode, -deltaH * 0.9 + 0.02),
-            0.08
-          );
-          const scaled = amount / (scale * scale);
+        // Sediment capacity (Lague): steeper + faster + wetter = carries more.
+        const cap = Math.max(slope, minSlope) * speed * water * p.capacity * 0.4;
+
+        const ix = Math.floor(px), iy = Math.floor(py);
+        if (sediment < cap) {
+          // EROSION: dig proportional to spare capacity, clamped per step.
+          const amount = Math.min((cap - sediment) * p.erode, maxErode);
           for (let b = 0; b < brush.weights.length; b++) {
             const bx = ix + brush.offsets[b * 2];
             const by = iy + brush.offsets[b * 2 + 1];
             if (bx >= 0 && by >= 0 && bx < s && by < s) {
-              map[by * s + bx] -= scaled * brush.weights[b];
+              map[by * s + bx] -= amount * brush.weights[b];
             }
           }
           sediment += amount;
+        } else {
+          // DEPOSITION: anti-cone clamp — when climbing, never fill above the
+          // next cell's height; otherwise shed only the excess, gently.
+          const amount = deltaH > 0
+            ? Math.min(sediment, deltaH) * p.deposit
+            : (sediment - cap) * p.deposit;
+          for (let b = 0; b < brush.weights.length; b++) {
+            const bx = ix + brush.offsets[b * 2];
+            const by = iy + brush.offsets[b * 2 + 1];
+            if (bx >= 0 && by >= 0 && bx < s && by < s) {
+              map[by * s + bx] += amount * brush.weights[b];
+            }
+          }
+          sediment -= amount;
         }
 
-        // keep droplet dynamics bounded (prevents exponential blow-up)
-        speed = Math.min(Math.sqrt(Math.max(0, speed * speed - deltaH * p.gravity * 40)), 12);
-        sediment = Math.min(sediment, 1);
+        // Speed: accelerate downhill, bleed off uphill.
+        speed = Math.min(Math.max(speed + slope * p.gravity * 0.2, 0.5), 4);
         water *= 1 - p.evaporate;
-        if (water < 0.01) break;
+        if (water < 0.02) break;
+        px = nx; py = ny;
       }
     }
 
-    let mn = Infinity, mx = -Infinity;
-    for (let i = 0; i < map.length; i++) {
-      if (map[i] < mn) mn = map[i];
-      if (map[i] > mx) mx = map[i];
-    }
-    const r = mx - mn || 1;
-    for (let i = 0; i < map.length; i++) map[i] = (map[i] - mn) / r;
-    return h;
+    return h.normalize();
   }
 };
