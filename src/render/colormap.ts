@@ -21,9 +21,11 @@ export function biomeColor(h: number, slope: number): [number, number, number] {
   else if (h < 0.62) c = lerpColor(...GRASS, ...ROCK, (h - 0.30) / 0.32);
   else c = lerpColor(...ROCK, ...SNOW, Math.min(1, (h - 0.62) / 0.3));
 
+  // steep slopes turn rocky, highest slopes darker rock
   const rockT = Math.min(Math.max((slope - 0.45) / 0.35, 0), 1);
   c = lerpColor(c[0], c[1], c[2], ROCK[0] * 0.75, ROCK[1] * 0.75, ROCK[2] * 0.78, rockT);
 
+  // snow only sticks on flatter faces
   if (h > 0.72) {
     const snowT = Math.min(Math.max((h - 0.72) / 0.25, 0), 1) * Math.min(Math.max((0.7 - slope) / 0.4, 0), 1);
     c = lerpColor(c[0], c[1], c[2], SNOW[0], SNOW[1], SNOW[2], snowT);
@@ -36,7 +38,7 @@ export function grayscale(h: number): [number, number, number] {
   return [h, h, h];
 }
 
-export type ColorMode = 'biome' | 'grayscale' | 'materials';
+export type ColorMode = 'biome' | 'grayscale' | 'materials' | 'smart';
 
 export function colorFor(mode: ColorMode, h: number, slope: number): [number, number, number] {
   if (mode === 'biome') return biomeColor(h, slope);

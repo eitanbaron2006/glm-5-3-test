@@ -191,6 +191,11 @@ export class App {
       this.rebuildViewport();
       markToggled();
     });
+    const smartBtn = mkBtn('🌍 Smart', 'Smart coloring (Gaea-style)', () => {
+      this.viewport.setMode('smart');
+      this.rebuildViewport();
+      markToggled();
+    });
     const materialsBtn = mkBtn('🎨 Materials', 'Material sets (SetMap)', () => {
       this.viewport.setMode('materials');
       this.rebuildViewport();
@@ -208,6 +213,7 @@ export class App {
     biomeBtn.classList.add('toggled');
     const markToggled = () => {
       biomeBtn.classList.toggle('toggled', this.viewport.colorMode === 'biome');
+      smartBtn.classList.toggle('toggled', this.viewport.colorMode === 'smart');
       materialsBtn.classList.toggle('toggled', this.viewport.colorMode === 'materials');
       grayBtn.classList.toggle('toggled', this.viewport.colorMode === 'grayscale');
     };
@@ -413,6 +419,9 @@ export class App {
       h.data.set(msg.data);
       if (msg.setmap) {
         (h as any).setmap = msg.setmap;
+      }
+      if (msg.smartmap) {
+        (h as any).smartmap = msg.smartmap;
       }
       this.lastResults.set(msg.id, h);
       this.editor.updateThumbs(this.lastResults);

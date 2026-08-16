@@ -51,7 +51,11 @@ export const HydraulicErosionNode: NodeTypeDefinition = {
   category: 'Erosion',
   color: ERO,
   inputs: [{ id: 'in', label: 'Terrain' }],
-  outputs: [{ id: 'out', label: 'Out' }],
+  outputs: [
+    { id: 'out', label: 'Out' },
+    { id: 'wear', label: 'Wear' },
+    { id: 'sediment', label: 'Sediment' },
+  ],
   params: [
     { id: 'seed', label: 'Seed', type: 'seed', default: 7 },
     { id: 'droplets', label: 'Droplets (k)', type: 'slider', min: 1, max: 150, step: 1, default: 50, integer: true },
@@ -69,6 +73,8 @@ export const HydraulicErosionNode: NodeTypeDefinition = {
     const s = src.size;
     const h = src.clone();
     const map = h.data;
+    const wearMap = new Float32Array(s * s); // accumulated erosion (rock exposure)
+    const sedMap = new Float32Array(s * s);  // accumulated deposition (soil)
     const rand = mulberry32(p.seed * 7919 + 13);
     const brush = makeBrush(p.radius);
 
@@ -125,6 +131,7 @@ export const HydraulicErosionNode: NodeTypeDefinition = {
             const by = iy + brush.offsets[b * 2 + 1];
             if (bx >= 0 && by >= 0 && bx < s && by < s) {
               map[by * s + bx] -= amount * brush.weights[b];
+              wearMap[by * s + bx] += amount * brush.weights[b];
             }
           }
           sediment += amount;
@@ -139,6 +146,7 @@ export const HydraulicErosionNode: NodeTypeDefinition = {
             const by = iy + brush.offsets[b * 2 + 1];
             if (bx >= 0 && by >= 0 && bx < s && by < s) {
               map[by * s + bx] += amount * brush.weights[b];
+              sedMap[by * s + bx] += amount * brush.weights[b];
             }
           }
           sediment -= amount;
@@ -154,6 +162,9 @@ export const HydraulicErosionNode: NodeTypeDefinition = {
 
     // NOTE: no normalize() here — erosion must preserve the incoming amplitude,
     // otherwise a per-node Height scale applied upstream would be erased.
+    // Attach wear/sediment maps (Gaea-style erosion masks) for downstream coloring.
+    (h as any).wear = wearMap;
+    (h as any).sediment = sedMap;
     return h;
   }
 };

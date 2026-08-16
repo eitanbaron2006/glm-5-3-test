@@ -3,6 +3,7 @@ import { nodeDef } from '../nodes/registry';
 import { renderThumb } from './util';
 import { Heightmap } from '../core/heightmap';
 import { SetMapData } from '../render/colormap';
+import { SmartMapData } from '../nodes/smartcolor';
 
 export const NODE_W = 170;
 export const HEADER_H = 24;
@@ -120,7 +121,8 @@ export function createNodeGroup(
   g.appendChild(fo);
   if (result) {
     const setmap = (result as any).setmap as SetMapData | undefined;
-    renderThumb(result, canvas, 72, 'biome', setmap);
+    const smartmap = (result as any).smartmap as SmartMapData | undefined;
+    renderThumb(result, canvas, 72, 'biome', setmap, smartmap);
   } else {
     const ctx = canvas.getContext('2d');
     if (ctx) {

@@ -687,10 +687,10 @@ export const PRESETS: PresetSpec[] = [
         key: 'setmap', type: 'setmap', x: 1110, y: 60,
         params: {
           baseMaterial: 'rock',
-          layer1Enabled: true, layer1Material: 'grass', layer1Source: 'height', layer1Position: 0.3, layer1Range: 0.25, layer1Falloff: 0.3, layer1Priority: 1,
-          layer2Enabled: true, layer2Material: 'snow', layer2Source: 'height', layer2Position: 0.7, layer2Range: 0.2, layer2Falloff: 0.25, layer2Priority: 2,
-          layer3Enabled: true, layer3Material: 'mud', layer3Source: 'slope', layer3Position: 0.6, layer3Range: 0.3, layer3Falloff: 0.3, layer3Priority: 0,
-          layer4Enabled: true, layer4Material: 'gravel', layer4Source: 'slope', layer4Position: 0.7, layer4Range: 0.2, layer4Falloff: 0.25, layer4Priority: 3,
+          layer1Enabled: true, layer1Material: 'grass', layer1Source: 'height', layer1Position: 0.3, layer1Range: 0.25, layer1Falloff: 0.3, layer1Strength: 1, layer1Contrast: 1.2, layer1Priority: 1,
+          layer2Enabled: true, layer2Material: 'snow', layer2Source: 'height', layer2Position: 0.7, layer2Range: 0.2, layer2Falloff: 0.25, layer2Strength: 1, layer2Contrast: 1.5, layer2Priority: 2,
+          layer3Enabled: true, layer3Material: 'mud', layer3Source: 'slope', layer3Position: 0.6, layer3Range: 0.3, layer3Falloff: 0.3, layer3Strength: 0.8, layer3Contrast: 1.1, layer3Priority: 0,
+          layer4Enabled: true, layer4Material: 'gravel', layer4Source: 'slope', layer4Position: 0.7, layer4Range: 0.2, layer4Falloff: 0.25, layer4Strength: 0.9, layer4Contrast: 1.3, layer4Priority: 3,
         }
       },
       { key: 'out', type: 'output', x: 1380, y: 60 }
@@ -702,6 +702,57 @@ export const PRESETS: PresetSpec[] = [
       { from: 'thermal', to: 'setmap', toPort: 'height' },
       { from: 'slope', to: 'setmap', toPort: 'slope' },
       { from: 'setmap', to: 'out' }
+    ]
+  },
+
+  // ────────────────────────────────────────────────────────────────────────
+  // 15 · SMART COLOR — Gaea-style physically-driven coloring. Terrain →
+  //    erosion (which emits Wear/Sediment masks) → SmartColor. SmartColor
+  //    builds a CLUT gradient from altitude, then blends in slope-based rock
+  //    exposure, curvature weathering (ridges vs valleys), and erosion
+  //    wear/sediment. In the viewport switch to "🌍 Smart" mode.
+  // ────────────────────────────────────────────────────────────────────────
+  {
+    name: '15 · Smart Color',
+    nodes: [
+      {
+        key: 'mountain', type: 'mountain', x: 30, y: 60,
+        params: {
+          seed: 2025, height: 1, x: 0.5, y: 0.52, radius: 0.42,
+          steepness: 2.6, elong: 0.3, angle: 55, irregular: 0.4,
+          foothills: 0.85, benches: 0.6, roughness: 0.2, roughScale: 6
+        }
+      },
+      {
+        key: 'hyd', type: 'hydraulic', x: 300, y: 60,
+        params: {
+          seed: 3, droplets: 70, lifetime: 50, inertia: 0.1, capacity: 6,
+          erode: 0.5, deposit: 0.35, evaporate: 0.02, gravity: 5.5, radius: 3
+        }
+      },
+      {
+        key: 'thermal', type: 'thermal', x: 570, y: 60,
+        params: { iterations: 25, talus: 0.02, amount: 0.6 }
+      },
+      {
+        key: 'smart', type: 'smartcolor', x: 840, y: 60,
+        params: {
+          snowLine: 0.82,
+          rockExposure: 0.8,
+          useErosion: true,
+          saturation: 1.05,
+          contrast: 1.05,
+        }
+      },
+      { key: 'out', type: 'output', x: 1110, y: 60 }
+    ],
+    links: [
+      { from: 'mountain', to: 'hyd' },
+      { from: 'hyd', to: 'thermal' },
+      { from: 'thermal', to: 'smart', toPort: 'height' },
+      { from: 'hyd', to: 'smart', toPort: 'wear' },
+      { from: 'hyd', to: 'smart', toPort: 'sediment' },
+      { from: 'smart', to: 'out' }
     ]
   }
 ];

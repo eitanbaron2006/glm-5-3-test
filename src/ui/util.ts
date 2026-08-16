@@ -1,13 +1,15 @@
 import { Heightmap } from '../core/heightmap';
 import { biomeColor, grayscale, resolveSetMapColor, SetMapData } from '../render/colormap';
+import { resolveSmartMapColor, SmartMapData } from '../nodes/smartcolor';
 
 /** Render a heightmap preview (with hillshading) into a canvas element. */
 export function renderThumb(
   h: Heightmap,
   canvas: HTMLCanvasElement,
   size = 72,
-  mode: 'biome' | 'grayscale' | 'materials' = 'biome',
-  setmap?: SetMapData
+  mode: 'biome' | 'grayscale' | 'materials' | 'smart' = 'biome',
+  setmap?: SetMapData,
+  smartmap?: SmartMapData
 ) {
   canvas.width = size;
   canvas.height = size;
@@ -28,7 +30,9 @@ export function renderThumb(
       // hillshade: light from NW
       const shade = Math.min(Math.max(0.62 + (dx + dy) * 1.4, 0.18), 1.25);
       let c: [number, number, number];
-      if (mode === 'materials' && setmap) {
+      if (mode === 'smart' && smartmap) {
+        c = resolveSmartMapColor(smartmap, u, v);
+      } else if (mode === 'materials' && setmap) {
         c = resolveSetMapColor(setmap, u, v);
       } else if (mode === 'biome') {
         c = biomeColor(hv, slope);

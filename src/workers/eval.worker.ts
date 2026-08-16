@@ -25,9 +25,10 @@ ctx.addEventListener('message', (e: MessageEvent) => {
     engine.evaluate(size, (_id, h) => {
       // copy (not transfer) the live buffer: downstream nodes still read it
       const copy = h.data.slice();
-      // Also send setmap if present
+      // Also send setmap / smartmap if present
       const setmap = (h as any).setmap;
-      ctx.postMessage({ type: 'node', evalId, id: _id, size: h.size, data: copy, setmap }, [copy.buffer]);
+      const smartmap = (h as any).smartmap;
+      ctx.postMessage({ type: 'node', evalId, id: _id, size: h.size, data: copy, setmap, smartmap }, [copy.buffer]);
     });
     ctx.postMessage({ type: 'done', evalId, ms: Math.round(performance.now() - t0) });
   } catch (err) {

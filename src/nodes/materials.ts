@@ -34,6 +34,8 @@ export interface SetMapEntry {
   mask: Float32Array;
   priority: number;
   size: number;
+  strength: number;
+  contrast: number;
 }
 
 export interface SetMapData {
@@ -83,6 +85,8 @@ export const SetMapNode: NodeTypeDefinition = {
     { id: 'layer1Position', label: 'Layer 1 Position', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.3 },
     { id: 'layer1Range', label: 'Layer 1 Range', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.25 },
     { id: 'layer1Falloff', label: 'Layer 1 Falloff', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.3 },
+    { id: 'layer1Strength', label: 'Layer 1 Strength', type: 'slider', min: 0, max: 1, step: 0.01, default: 1 },
+    { id: 'layer1Contrast', label: 'Layer 1 Contrast', type: 'slider', min: 0, max: 4, step: 0.01, default: 1 },
     { id: 'layer1Invert', label: 'Layer 1 Invert', type: 'check', default: false },
     { id: 'layer1Priority', label: 'Layer 1 Priority', type: 'slider', min: 0, max: 10, step: 1, default: 1 },
     { id: 'layer2Enabled', label: 'Enable Layer 2', type: 'check', default: false },
@@ -91,6 +95,8 @@ export const SetMapNode: NodeTypeDefinition = {
     { id: 'layer2Position', label: 'Layer 2 Position', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.7 },
     { id: 'layer2Range', label: 'Layer 2 Range', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.2 },
     { id: 'layer2Falloff', label: 'Layer 2 Falloff', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.25 },
+    { id: 'layer2Strength', label: 'Layer 2 Strength', type: 'slider', min: 0, max: 1, step: 0.01, default: 1 },
+    { id: 'layer2Contrast', label: 'Layer 2 Contrast', type: 'slider', min: 0, max: 4, step: 0.01, default: 1 },
     { id: 'layer2Invert', label: 'Layer 2 Invert', type: 'check', default: false },
     { id: 'layer2Priority', label: 'Layer 2 Priority', type: 'slider', min: 0, max: 10, step: 1, default: 2 },
     { id: 'layer3Enabled', label: 'Enable Layer 3', type: 'check', default: false },
@@ -99,6 +105,8 @@ export const SetMapNode: NodeTypeDefinition = {
     { id: 'layer3Position', label: 'Layer 3 Position', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.05 },
     { id: 'layer3Range', label: 'Layer 3 Range', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.1 },
     { id: 'layer3Falloff', label: 'Layer 3 Falloff', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.3 },
+    { id: 'layer3Strength', label: 'Layer 3 Strength', type: 'slider', min: 0, max: 1, step: 0.01, default: 1 },
+    { id: 'layer3Contrast', label: 'Layer 3 Contrast', type: 'slider', min: 0, max: 4, step: 0.01, default: 1 },
     { id: 'layer3Invert', label: 'Layer 3 Invert', type: 'check', default: false },
     { id: 'layer3Priority', label: 'Layer 3 Priority', type: 'slider', min: 0, max: 10, step: 1, default: 0 },
     { id: 'layer4Enabled', label: 'Enable Layer 4', type: 'check', default: false },
@@ -107,6 +115,8 @@ export const SetMapNode: NodeTypeDefinition = {
     { id: 'layer4Position', label: 'Layer 4 Position', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.6 },
     { id: 'layer4Range', label: 'Layer 4 Range', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.3 },
     { id: 'layer4Falloff', label: 'Layer 4 Falloff', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.3 },
+    { id: 'layer4Strength', label: 'Layer 4 Strength', type: 'slider', min: 0, max: 1, step: 0.01, default: 1 },
+    { id: 'layer4Contrast', label: 'Layer 4 Contrast', type: 'slider', min: 0, max: 4, step: 0.01, default: 1 },
     { id: 'layer4Invert', label: 'Layer 4 Invert', type: 'check', default: false },
     { id: 'layer4Priority', label: 'Layer 4 Priority', type: 'slider', min: 0, max: 10, step: 1, default: 3 },
   ],
@@ -129,13 +139,15 @@ export const SetMapNode: NodeTypeDefinition = {
       mask: new Float32Array(size * size).fill(1),
       priority: -1,
       size,
+      strength: 1,
+      contrast: 1,
     });
 
     const layers = [
-      { enabled: true, material: p.layer1Material, source: p.layer1Source, position: p.layer1Position, range: p.layer1Range, falloff: p.layer1Falloff, invert: p.layer1Invert, priority: p.layer1Priority, maskIdx: 0 },
-      { enabled: p.layer2Enabled, material: p.layer2Material, source: p.layer2Source, position: p.layer2Position, range: p.layer2Range, falloff: p.layer2Falloff, invert: p.layer2Invert, priority: p.layer2Priority, maskIdx: 1 },
-      { enabled: p.layer3Enabled, material: p.layer3Material, source: p.layer3Source, position: p.layer3Position, range: p.layer3Range, falloff: p.layer3Falloff, invert: p.layer3Invert, priority: p.layer3Priority, maskIdx: 2 },
-      { enabled: p.layer4Enabled, material: p.layer4Material, source: p.layer4Source, position: p.layer4Position, range: p.layer4Range, falloff: p.layer4Falloff, invert: p.layer4Invert, priority: p.layer4Priority, maskIdx: 3 },
+      { enabled: true, material: p.layer1Material, source: p.layer1Source, position: p.layer1Position, range: p.layer1Range, falloff: p.layer1Falloff, invert: p.layer1Invert, priority: p.layer1Priority, strength: p.layer1Strength, contrast: p.layer1Contrast, maskIdx: 0 },
+      { enabled: p.layer2Enabled, material: p.layer2Material, source: p.layer2Source, position: p.layer2Position, range: p.layer2Range, falloff: p.layer2Falloff, invert: p.layer2Invert, priority: p.layer2Priority, strength: p.layer2Strength, contrast: p.layer2Contrast, maskIdx: 1 },
+      { enabled: p.layer3Enabled, material: p.layer3Material, source: p.layer3Source, position: p.layer3Position, range: p.layer3Range, falloff: p.layer3Falloff, invert: p.layer3Invert, priority: p.layer3Priority, strength: p.layer3Strength, contrast: p.layer3Contrast, maskIdx: 2 },
+      { enabled: p.layer4Enabled, material: p.layer4Material, source: p.layer4Source, position: p.layer4Position, range: p.layer4Range, falloff: p.layer4Falloff, invert: p.layer4Invert, priority: p.layer4Priority, strength: p.layer4Strength, contrast: p.layer4Contrast, maskIdx: 3 },
     ];
 
     for (const layer of layers) {
@@ -150,12 +162,22 @@ export const SetMapNode: NodeTypeDefinition = {
         default: sourceMap = height; break;
       }
       const mask = createMask(size, layer.position, layer.range, layer.falloff, layer.invert, sourceMap);
+      
+      // Apply contrast (gamma) and strength
+      if (layer.contrast !== 1 || layer.strength !== 1) {
+        for (let i = 0; i < mask.length; i++) {
+          mask[i] = Math.pow(mask[i], layer.contrast) * layer.strength;
+        }
+      }
+      
       const mat = DEFAULT_MATERIALS.find(m => m.id === layer.material) ?? DEFAULT_MATERIALS[0];
       entries.push({
         materialId: mat.id,
         mask,
         priority: layer.priority,
         size,
+        strength: layer.strength,
+        contrast: layer.contrast,
       });
     }
 
@@ -179,16 +201,32 @@ export function resolveSetMapColor(setmap: SetMapData | undefined, u: number, v:
   if (!setmap || !setmap.entries.length) {
     return [0.5, 0.5, 0.5];
   }
+
+  // Gaea-style blended compositing: accumulate all layers with their mask weights
+  // Base layer is always at full opacity (mask = 1)
+  let r = 0, g = 0, b = 0;
+  let totalWeight = 0;
+
   for (const entry of setmap.entries) {
     const iu = Math.min(Math.floor(u * entry.size), entry.size - 1);
     const iv = Math.min(Math.floor(v * entry.size), entry.size - 1);
     const idx = (iv * entry.size + iu);
     const maskVal = entry.mask[idx];
-    if (maskVal > 0.5) {
-      const mat = getMaterialById(entry.materialId);
-      return mat.color;
-    }
+
+    if (maskVal <= 0) continue;
+
+    const mat = getMaterialById(entry.materialId);
+    const weight = maskVal * (entry.strength ?? 1);
+    r += mat.color[0] * weight;
+    g += mat.color[1] * weight;
+    b += mat.color[2] * weight;
+    totalWeight += weight;
   }
+
+  if (totalWeight > 0) {
+    return [r / totalWeight, g / totalWeight, b / totalWeight];
+  }
+
   const baseMat = getMaterialById(setmap.baseMaterialId);
   return baseMat.color;
 }

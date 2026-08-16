@@ -3,6 +3,7 @@ import { nodeDef } from '../nodes/registry';
 import { Heightmap } from '../core/heightmap';
 import { renderThumb } from './util';
 import { SetMapData } from '../render/colormap';
+import { SmartMapData } from '../nodes/smartcolor';
 import { showAddNodeMenu } from './editor-menu';
 import {
   createNodeGroup, edgePath, inputPortPos, outputPortPos, svgEl, nodeHeight
@@ -161,7 +162,8 @@ export class NodeEditor {
       const h = results.get(id);
       if (canvas && h) {
         const setmap = (h as any).setmap as SetMapData | undefined;
-        renderThumb(h, canvas as HTMLCanvasElement, 72, 'biome', setmap);
+        const smartmap = (h as any).smartmap as SmartMapData | undefined;
+        renderThumb(h, canvas as HTMLCanvasElement, 72, 'biome', setmap, smartmap);
       }
     });
   }

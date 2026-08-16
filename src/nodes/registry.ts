@@ -13,6 +13,7 @@ import {
   CraterNode, CanyonNode, DunesNode, VolcanoNode, MesaNode
 } from './primitives';
 import { SetMapNode } from './materials';
+import { SmartColorNode } from './smartcolor';
 
 export const NODE_TYPES: NodeTypeDefinition[] = [
   // Primitives
@@ -51,6 +52,7 @@ export const NODE_TYPES: NodeTypeDefinition[] = [
   SelectRangeNode,
   // Materials
   SetMapNode,
+  SmartColorNode,
   // Output
   OutputNode,
 ];
