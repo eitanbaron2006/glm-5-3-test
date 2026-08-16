@@ -1,0 +1,24 @@
+{
+  "name": "terrain-forge",
+  "private": true,
+  "version": "1.0.0",
+  "description": "GAEA-style procedural terrain generator built with Vite + Three.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "smoke": "esbuild scripts/smoke.ts --bundle --platform=node --format=cjs --outfile=scripts/smoke.cjs && node scripts/smoke.cjs 256",
+    "probe": "esbuild scripts/probe.ts --bundle --platform=node --format=cjs --outfile=scripts/probe.cjs && node scripts/probe.cjs",
+    "e2e": "node scripts/browser-check.cjs"
+  },
+  "dependencies": {
+    "three": "^0.170.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.185.4",
+    "puppeteer-core": "^25.7.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.4.0"
+  }
+}

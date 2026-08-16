@@ -1,0 +1,160 @@
+/* ============ Node Graph Editor ============ */
+.graph-scroll {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  cursor: default;
+  background:
+    radial-gradient(circle at 1px 1px, #232830 1px, transparent 1px) 0 0 / 24px 24px,
+    #171a20;
+}
+
+.graph-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.graph-svg .edge {
+  fill: none;
+  stroke: #4a5260;
+  stroke-width: 2;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+.graph-svg .edge:hover { stroke: var(--accent); }
+.graph-svg .edge.selected { stroke: var(--accent); stroke-width: 2.5; }
+.graph-svg .edge-flow {
+  fill: none;
+  stroke: rgba(232, 150, 60, 0.28);
+  stroke-width: 4;
+  pointer-events: none;
+}
+
+.graph-svg .temp-edge {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+  pointer-events: none;
+}
+
+/* node group */
+.graph-svg .node-body { cursor: grab; }
+.graph-svg .node-body:active { cursor: grabbing; }
+
+.graph-svg .node-shadow { fill: rgba(0,0,0,0.45); }
+
+.graph-svg .node-rect {
+  fill: #22262e;
+  stroke: #3a4250;
+  stroke-width: 1.4;
+  rx: 7;
+}
+
+.graph-svg .node-selected .node-rect { stroke: var(--accent); stroke-width: 2; }
+
+.graph-svg .node-header-rect { rx: 7; }
+
+.graph-svg .node-title {
+  font-size: 11px;
+  font-weight: 600;
+  fill: #ffffff;
+  pointer-events: none;
+}
+
+.graph-svg .node-badge {
+  font-size: 8px;
+  fill: rgba(255,255,255,0.75);
+  pointer-events: none;
+}
+
+/* ports */
+.graph-svg .port {
+  fill: #16181d;
+  stroke: #5a636f;
+  stroke-width: 1.5;
+  cursor: crosshair;
+  transition: r 0.1s;
+}
+.graph-svg .port:hover { stroke: var(--accent); }
+.graph-svg .port.filled { fill: #7d8592; stroke: #a8b0bc; }
+.graph-svg .port.filled:hover, .graph-svg .port.drag-target { fill: var(--accent); stroke: var(--accent); }
+
+.graph-svg .port-label {
+  font-size: 9px;
+  fill: #9aa3b0;
+  pointer-events: none;
+}
+
+/* thumbnails */
+.graph-svg foreignObject { pointer-events: none; }
+.node-thumb {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  display: block;
+  image-rendering: auto;
+  background: #101216;
+}
+
+/* context menu */
+.ctxmenu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 190px;
+  background: var(--panel);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.55);
+  padding: 4px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.ctxmenu .ctx-cat {
+  padding: 6px 10px 3px;
+  color: var(--text-dim);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.ctxmenu .ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.ctxmenu .ctx-item:hover { background: #2e3542; }
+.ctxmenu .ctx-sep { height: 1px; background: var(--border); margin: 4px 6px; }
+.ctxmenu .ctx-item.danger { color: #ff9d9d; }
+
+/* palette drag ghost */
+.drag-ghost {
+  position: fixed;
+  z-index: 2000;
+  pointer-events: none;
+  padding: 4px 10px;
+  font-size: 12px;
+  background: var(--panel2);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: #fff;
+  opacity: 0.9;
+}
+
+/* scrollbars in graph */
+.graph-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.graph-scroll::-webkit-scrollbar-thumb { background: #333a45; border-radius: 4px; }
+.graph-scroll::-webkit-scrollbar-corner { background: transparent; }
+
+/* disabled (bypassed) node — dimmed GAEA-style */
+.graph-svg .node-disabled { opacity: 0.45; }
+.graph-svg .node-disabled .node-header-rect { fill: #5a616e; }

@@ -1,0 +1,14 @@
+# dependencies & build output
+node_modules/
+dist/
+
+# runtime logs
+*.log
+
+# windows junk from bad redirects
+nul
+
+# generated test bundles (rebuild with: npm run smoke / npm run probe)
+scripts/smoke.cjs
+scripts/probe.cjs
+scripts/browser-check.png
