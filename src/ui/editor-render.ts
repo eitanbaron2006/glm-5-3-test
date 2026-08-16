@@ -2,6 +2,7 @@ import { GraphNode, GraphEdge } from '../core/graph';
 import { nodeDef } from '../nodes/registry';
 import { renderThumb } from './util';
 import { Heightmap } from '../core/heightmap';
+import { SetMapData } from '../render/colormap';
 
 export const NODE_W = 170;
 export const HEADER_H = 24;
@@ -117,8 +118,10 @@ export function createNodeGroup(
   canvas.className = 'node-thumb';
   fo.appendChild(canvas);
   g.appendChild(fo);
-  if (result) renderThumb(result, canvas, 72, 'biome');
-  else {
+  if (result) {
+    const setmap = (result as any).setmap as SetMapData | undefined;
+    renderThumb(result, canvas, 72, 'biome', setmap);
+  } else {
     const ctx = canvas.getContext('2d');
     if (ctx) {
       canvas.width = 72; canvas.height = 72;

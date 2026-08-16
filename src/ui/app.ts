@@ -191,6 +191,11 @@ export class App {
       this.rebuildViewport();
       markToggled();
     });
+    const materialsBtn = mkBtn('🎨 Materials', 'Material sets (SetMap)', () => {
+      this.viewport.setMode('materials');
+      this.rebuildViewport();
+      markToggled();
+    });
     const grayBtn = mkBtn('◐ Gray', 'Grayscale', () => {
       this.viewport.setMode('grayscale');
       this.rebuildViewport();
@@ -203,6 +208,7 @@ export class App {
     biomeBtn.classList.add('toggled');
     const markToggled = () => {
       biomeBtn.classList.toggle('toggled', this.viewport.colorMode === 'biome');
+      materialsBtn.classList.toggle('toggled', this.viewport.colorMode === 'materials');
       grayBtn.classList.toggle('toggled', this.viewport.colorMode === 'grayscale');
     };
 
@@ -405,6 +411,9 @@ export class App {
     if (msg.type === 'node') {
       const h = new Heightmap(msg.size);
       h.data.set(msg.data);
+      if (msg.setmap) {
+        (h as any).setmap = msg.setmap;
+      }
       this.lastResults.set(msg.id, h);
       this.editor.updateThumbs(this.lastResults);
       this.buildDone++;

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Heightmap } from '../core/heightmap';
-import { biomeColor, grayscale, ColorMode } from '../render/colormap';
+import { biomeColor, grayscale, ColorMode, SetMapData, resolveSetMapColor, getMaterialById, DEFAULT_MATERIALS } from '../render/colormap';
 
 export class Viewport {
   renderer: THREE.WebGLRenderer;
@@ -13,10 +13,12 @@ export class Viewport {
   sun: THREE.DirectionalLight;
   colorMode: ColorMode = 'biome';
   wireframe = false;
-  waterLevel = 0; // 0 = disabled
-  heightScale = 1; // neutral display multiplier (relative on top of per-node heights)
+  waterLevel = 0;
+  heightScale = 1;
   private container: HTMLElement;
   private frameHandle = 0;
+  private setmap: SetMapData | null = null;
+  private materialUniforms: Map<string, THREE.Material> = new Map();
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -43,7 +45,6 @@ export class Viewport {
     this.controls.maxDistance = 12;
     this.controls.minDistance = 0.3;
 
-    // lighting
     this.sun = new THREE.DirectionalLight(0xfff2dd, 2.6);
     this.sun.position.set(3, 5, 2);
     this.sun.castShadow = true;
@@ -79,6 +80,9 @@ export class Viewport {
 
   /** Rebuild the terrain mesh from a heightmap. */
   update(height: Heightmap) {
+    // Extract setmap data if present (BEFORE potential reduction)
+    this.setmap = (height as any).setmap ?? null;
+
     // 4K/8K graphs render through a bilaterally-sampled 1024 proxy mesh:
     // a 8191x8191 PlaneGeometry (67M vertices) is not GPU-viable.
     let src = height;
@@ -88,6 +92,10 @@ export class Viewport {
         for (let x = 0; x < 1024; x++) {
           reduced.set(x, y, height.sample(x / 1023, y / 1023));
         }
+      }
+      // Copy setmap data to reduced heightmap for materials mode
+      if (this.setmap) {
+        (reduced as any).setmap = this.setmap;
       }
       src = reduced;
     }
@@ -121,9 +129,14 @@ export class Viewport {
       const dy = (src.get(xi, yp) - src.get(xi, ym)) * this.heightScale * seg * 0.5;
       const slope = Math.min(1, Math.sqrt(dx * dx + dy * dy));
 
-      const c = this.colorMode === 'biome'
-        ? biomeColor(h, slope)
-        : grayscale(h);
+      let c: [number, number, number];
+      if (this.colorMode === 'materials' && this.setmap) {
+        c = resolveSetMapColor(this.setmap, u, v);
+      } else if (this.colorMode === 'biome') {
+        c = biomeColor(h, slope);
+      } else {
+        c = grayscale(h);
+      }
       colors[i * 3] = c[0];
       colors[i * 3 + 1] = c[1];
       colors[i * 3 + 2] = c[2];
@@ -131,13 +144,25 @@ export class Viewport {
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     geo.computeVertexNormals();
 
-    const mat = new THREE.MeshStandardMaterial({
-      vertexColors: true,
-      roughness: 0.93,
-      metalness: 0.02,
-      wireframe: this.wireframe,
-      flatShading: false
-    });
+    let mat: THREE.Material;
+    if (this.colorMode === 'materials' && this.setmap) {
+      const baseMat = getMaterialById(this.setmap.baseMaterialId);
+      mat = new THREE.MeshStandardMaterial({
+        vertexColors: true,
+        roughness: baseMat.roughness,
+        metalness: baseMat.metallic,
+        wireframe: this.wireframe,
+        flatShading: false
+      });
+    } else {
+      mat = new THREE.MeshStandardMaterial({
+        vertexColors: true,
+        roughness: 0.93,
+        metalness: 0.02,
+        wireframe: this.wireframe,
+        flatShading: false
+      });
+    }
     this.mesh = new THREE.Mesh(geo, mat);
     this.mesh.castShadow = true;
     this.mesh.receiveShadow = true;

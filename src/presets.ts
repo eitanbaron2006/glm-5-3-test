@@ -623,10 +623,10 @@ export const PRESETS: PresetSpec[] = [
   },
 
   // ────────────────────────────────────────────────────────────────────────
-  // 13 · WIND SCULPT — Dunes carved by directional Wind Erosion: wind-facing
-  //    slip faces abrade while fines streak downwind, then Adjust lifts the
-  //    mid-tones. Turn the Wind node's Direction to reshape the dunes live.
-  // ────────────────────────────────────────────────────────────────────────
+// 13 · WIND SCULPT — Dunes carved by directional Wind Erosion: wind-facing
+//    slip faces abrade while fines streak downwind, then Adjust lifts the
+//    mid-tones. Turn the Wind node's Direction to reshape the dunes live.
+// ────────────────────────────────────────────────────────────────────────
   {
     name: '13 · Wind Sculpt',
     nodes: [
@@ -648,6 +648,60 @@ export const PRESETS: PresetSpec[] = [
       { from: 'dunes', to: 'wind' },
       { from: 'wind', to: 'adjust' },
       { from: 'adjust', to: 'out' }
+    ]
+  },
+
+  // ────────────────────────────────────────────────────────────────────────
+  // 14 · SETMAP MATERIALS — Gaea-style material sets: Base Rock with Grass
+  //    on lower slopes (by height), Snow on peaks (by height), Mud in
+  //    valleys (by slope), and Gravel on steep faces. Switch viewport to
+  //    "Materials" mode to see the material colors.
+  // ────────────────────────────────────────────────────────────────────────
+  {
+    name: '14 · SetMap Materials',
+    nodes: [
+      {
+        key: 'mountain', type: 'mountain', x: 30, y: 60,
+        params: {
+          seed: 2025, height: 1, x: 0.5, y: 0.52, radius: 0.4,
+          steepness: 2.2, elong: 0.3, angle: 55, irregular: 0.38,
+          foothills: 0.8, benches: 0.55, roughness: 0.16, roughScale: 5
+        }
+      },
+      {
+        key: 'hyd', type: 'hydraulic', x: 300, y: 60,
+        params: {
+          seed: 3, droplets: 45, lifetime: 40, inertia: 0.1, capacity: 5,
+          erode: 0.4, deposit: 0.3, evaporate: 0.02, gravity: 5, radius: 3
+        }
+      },
+      {
+        key: 'thermal', type: 'thermal', x: 570, y: 60,
+        params: { iterations: 18, talus: 0.02, amount: 0.5 }
+      },
+      {
+        key: 'slope', type: 'slope', x: 840, y: 60,
+        params: { intensity: 3 }
+      },
+      {
+        key: 'setmap', type: 'setmap', x: 1110, y: 60,
+        params: {
+          baseMaterial: 'rock',
+          layer1Enabled: true, layer1Material: 'grass', layer1Source: 'height', layer1Position: 0.3, layer1Range: 0.25, layer1Falloff: 0.3, layer1Priority: 1,
+          layer2Enabled: true, layer2Material: 'snow', layer2Source: 'height', layer2Position: 0.7, layer2Range: 0.2, layer2Falloff: 0.25, layer2Priority: 2,
+          layer3Enabled: true, layer3Material: 'mud', layer3Source: 'slope', layer3Position: 0.6, layer3Range: 0.3, layer3Falloff: 0.3, layer3Priority: 0,
+          layer4Enabled: true, layer4Material: 'gravel', layer4Source: 'slope', layer4Position: 0.7, layer4Range: 0.2, layer4Falloff: 0.25, layer4Priority: 3,
+        }
+      },
+      { key: 'out', type: 'output', x: 1380, y: 60 }
+    ],
+    links: [
+      { from: 'mountain', to: 'hyd' },
+      { from: 'hyd', to: 'thermal' },
+      { from: 'thermal', to: 'slope' },
+      { from: 'thermal', to: 'setmap', toPort: 'height' },
+      { from: 'slope', to: 'setmap', toPort: 'slope' },
+      { from: 'setmap', to: 'out' }
     ]
   }
 ];

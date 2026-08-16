@@ -12,6 +12,7 @@ import {
   MountainNode, IslandNode, RidgeNode, PeaksNode,
   CraterNode, CanyonNode, DunesNode, VolcanoNode, MesaNode
 } from './primitives';
+import { SetMapNode } from './materials';
 
 export const NODE_TYPES: NodeTypeDefinition[] = [
   // Primitives
@@ -25,11 +26,11 @@ export const NODE_TYPES: NodeTypeDefinition[] = [
   VolcanoNode,
   MesaNode,
   // Generators
-  NoiseNode,
-  VoronoiNode,
   GradientNode,
   RadialGradientNode,
   ConstantNode,
+  NoiseNode,
+  VoronoiNode,
   // Filters
   BlurNode,
   SharpenNode,
@@ -48,11 +49,13 @@ export const NODE_TYPES: NodeTypeDefinition[] = [
   DisplaceNode,
   // Selectors
   SelectRangeNode,
+  // Materials
+  SetMapNode,
   // Output
   OutputNode,
 ];
 
-export const CATEGORY_ORDER = ['Primitives', 'Generators', 'Filters', 'Erosion', 'Combiners', 'Selectors', 'Output'];
+export const CATEGORY_ORDER = ['Primitives', 'Generators', 'Filters', 'Erosion', 'Combiners', 'Selectors', 'Materials', 'Output'];
 
 export function nodeDef(type: string): NodeTypeDefinition | undefined {
   return NODE_TYPES.find(n => n.type === type);

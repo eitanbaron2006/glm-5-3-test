@@ -2,6 +2,7 @@ import { Graph, GraphNode } from '../core/graph';
 import { nodeDef } from '../nodes/registry';
 import { Heightmap } from '../core/heightmap';
 import { renderThumb } from './util';
+import { SetMapData } from '../render/colormap';
 import { showAddNodeMenu } from './editor-menu';
 import {
   createNodeGroup, edgePath, inputPortPos, outputPortPos, svgEl, nodeHeight
@@ -158,7 +159,10 @@ export class NodeEditor {
       const id = g.getAttribute('data-node')!;
       const canvas = g.querySelector('canvas');
       const h = results.get(id);
-      if (canvas && h) renderThumb(h, canvas as HTMLCanvasElement, 72, 'biome');
+      if (canvas && h) {
+        const setmap = (h as any).setmap as SetMapData | undefined;
+        renderThumb(h, canvas as HTMLCanvasElement, 72, 'biome', setmap);
+      }
     });
   }
 

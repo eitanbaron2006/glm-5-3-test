@@ -2,7 +2,7 @@
    off the main thread so the UI never freezes — like GAEA's threaded engine.
 
    Protocol (main -> worker):  { type: 'eval', evalId, graph, size }
-   Protocol (worker -> main):  { type: 'node', evalId, id, size, data }
+   Protocol (worker -> main):  { type: 'node', evalId, id, size, data, setmap? }
                                { type: 'done', evalId, ms }
                                { type: 'error', evalId, message } */
 import { Graph } from '../core/graph';
@@ -25,7 +25,9 @@ ctx.addEventListener('message', (e: MessageEvent) => {
     engine.evaluate(size, (_id, h) => {
       // copy (not transfer) the live buffer: downstream nodes still read it
       const copy = h.data.slice();
-      ctx.postMessage({ type: 'node', evalId, id: _id, size: h.size, data: copy }, [copy.buffer]);
+      // Also send setmap if present
+      const setmap = (h as any).setmap;
+      ctx.postMessage({ type: 'node', evalId, id: _id, size: h.size, data: copy, setmap }, [copy.buffer]);
     });
     ctx.postMessage({ type: 'done', evalId, ms: Math.round(performance.now() - t0) });
   } catch (err) {
