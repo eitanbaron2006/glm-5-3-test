@@ -77,17 +77,17 @@ export class App {
       <div class="main" id="main">
         <aside class="palette" id="palette"></aside>
         <div class="splitter v" id="split-pal"></div>
-        <div class="center" id="center">
-          <section class="pane" id="pane-graph">
-            <div class="pane-header">Node Graph</div>
-            <div class="pane-body" id="graph-body"></div>
-          </section>
-          <div class="splitter h" id="split-center"></div>
+        <div class="center stacked" id="center">
           <section class="pane" id="pane-view">
             <div class="pane-header">3D Viewport</div>
             <div class="pane-body" id="viewport-body">
               <div class="viewport-overlay" id="vp-controls"></div>
             </div>
+          </section>
+          <div class="splitter h" id="split-center"></div>
+          <section class="pane" id="pane-graph">
+            <div class="pane-header">Node Graph</div>
+            <div class="pane-body" id="graph-body"></div>
           </section>
         </div>
         <div class="splitter v" id="split-props"></div>
