@@ -139,7 +139,7 @@ export class Views2DPanel {
     });
 
     this.container.querySelector('#v2d-btn-reset-cam')?.addEventListener('click', () => {
-      this.resetCameras();
+      this.resetAll();
     });
 
     this.initOrthoViews();
@@ -318,6 +318,28 @@ export class Views2DPanel {
     });
 
     requestAnimationFrame(() => this.resize());
+  }
+
+  resetAll() {
+    // 1. Reset mode to 'all' (restores all 3 views)
+    this.setMode('all');
+
+    // 2. Reset splitters to default 50% / 50%
+    const rootBody = this.container.querySelector('#v2d-body') as HTMLElement;
+    if (rootBody) {
+      rootBody.style.removeProperty('--v2d-top-h');
+      rootBody.style.removeProperty('--v2d-front-w');
+    }
+    document.documentElement.style.removeProperty('--vp-2d-w');
+
+    // 3. Reset all 2D cameras and controls
+    this.resetCameras();
+
+    // 4. Update viewport and 2D views
+    requestAnimationFrame(() => {
+      this.resize();
+      this.render();
+    });
   }
 
   resetCameras() {
