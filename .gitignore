@@ -11,4 +11,4 @@ nul
 # generated test bundles (rebuild with: npm run smoke / npm run probe)
 scripts/smoke.cjs
 scripts/probe.cjs
-scripts/browser-check.png
+scripts/*.png
