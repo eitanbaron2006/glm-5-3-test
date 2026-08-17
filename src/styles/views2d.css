@@ -1,0 +1,322 @@
+/* 2D Multi-Views Panel & Viewport Split */
+.viewport-split-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.vp-3d-pane {
+  flex: 1;
+  min-width: 180px;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.vp-3d-pane canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.vp-2d-pane {
+  width: var(--vp-2d-w, 42%);
+  min-width: 240px;
+  max-width: 75%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #14171d;
+  border-left: 1px solid var(--border);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.v2d-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 32px;
+  padding: 0 10px;
+  background: #1a1d24;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.v2d-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  color: var(--text-bright);
+  letter-spacing: 0.3px;
+}
+
+.v2d-icon {
+  color: var(--accent);
+  font-size: 13px;
+}
+
+.v2d-modes {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.v2d-mode-btn {
+  padding: 2px 7px;
+  height: 22px;
+  font-size: 10.5px;
+  font-weight: 500;
+  border-radius: 3px;
+  background: #21252d;
+  border: 1px solid #2d3340;
+  color: #8e98a8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.v2d-mode-btn:hover {
+  color: #fff;
+  background: #2b303c;
+  border-color: #3f4758;
+}
+
+.v2d-mode-btn.active {
+  color: #fff;
+  background: #343e50;
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.v2d-slice-info {
+  font-family: monospace;
+  font-size: 10px;
+  color: #738094;
+  background: #101216;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid #232731;
+}
+
+.v2d-close-btn {
+  background: transparent;
+  border: none;
+  color: #707a8a;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  transition: all 0.15s;
+}
+
+.v2d-close-btn:hover {
+  color: #fff;
+  background: #323846;
+}
+
+.v2d-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  overflow-y: auto;
+  background: #0f1115;
+}
+
+.v2d-card {
+  display: flex;
+  flex-direction: column;
+  background: #161920;
+  border: 1px solid #242934;
+  border-radius: 5px;
+  overflow: hidden;
+  flex: 1;
+  min-height: 110px;
+  transition: flex 0.2s ease;
+}
+
+.v2d-card-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 26px;
+  padding: 0 8px;
+  background: #1c2028;
+  border-bottom: 1px solid #242934;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #abb5c4;
+  flex-shrink: 0;
+}
+
+.v2d-card-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.v2d-dim {
+  color: #5d6778;
+  font-weight: 400;
+  font-size: 9.5px;
+}
+
+.v2d-card-info {
+  font-family: monospace;
+  font-size: 9.5px;
+  color: #738094;
+}
+
+.v2d-card-btn {
+  padding: 1px 6px;
+  height: 19px;
+  font-size: 9.5px;
+  font-weight: 500;
+  border-radius: 3px;
+  background: #232833;
+  border: 1px solid #303746;
+  color: #8a95a6;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.v2d-card-btn:hover {
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.v2d-card-btn.active {
+  color: #fff;
+  background: #343e50;
+  border-color: var(--accent);
+}
+
+.v2d-card-content {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #13161c;
+}
+
+.v2d-top-wrap {
+  cursor: crosshair;
+}
+
+.v2d-top-wrap canvas {
+  display: block;
+  border-radius: 2px;
+}
+
+.v2d-tool-btn {
+  padding: 2px 7px;
+  height: 22px;
+  font-size: 10.5px;
+  font-weight: 500;
+  border-radius: 3px;
+  background: #21252d;
+  border: 1px solid #2d3340;
+  color: #8e98a8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.v2d-tool-btn:hover {
+  color: #fff;
+  background: #2b303c;
+  border-color: #3f4758;
+}
+
+.v2d-badge {
+  display: inline-block;
+  padding: 1px 5px;
+  font-size: 8.5px;
+  font-weight: 700;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+
+.badge-top {
+  background: #20354b;
+  color: #79b8ff;
+  border: 1px solid #2d4e72;
+}
+
+.badge-front {
+  background: #193832;
+  color: #4ecdc4;
+  border: 1px solid #285e54;
+}
+
+.badge-side {
+  background: #3c2a16;
+  color: #f39c12;
+  border: 1px solid #5c3e1e;
+}
+
+.v2d-card-content canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Mode overrides */
+.mode-all #v2d-card-top {
+  flex: 1;
+  min-height: 110px;
+}
+.mode-all #v2d-card-front {
+  flex: 1;
+  min-height: 110px;
+}
+.mode-all #v2d-card-side {
+  flex: 1;
+  min-height: 110px;
+}
+
+.mode-top #v2d-card-top {
+  display: flex;
+  flex: 1;
+  height: 100%;
+}
+.mode-top #v2d-card-front,
+.mode-top #v2d-card-side {
+  display: none !important;
+}
+
+.mode-front #v2d-card-front {
+  display: flex;
+  flex: 1;
+  height: 100%;
+}
+.mode-front #v2d-card-top,
+.mode-front #v2d-card-side {
+  display: none !important;
+}
+
+.mode-side #v2d-card-side {
+  display: flex;
+  flex: 1;
+  height: 100%;
+}
+.mode-side #v2d-card-top,
+.mode-side #v2d-card-front {
+  display: none !important;
+}
+
+#btn-2d.active {
+  color: #fff;
+  background: #343e50;
+  border-color: var(--accent);
+  font-weight: 600;
+}

@@ -6,6 +6,7 @@ import { NodeEditor } from './nodeeditor';
 import { PropertiesPanel } from './properties';
 import { buildPalette } from './editor-menu';
 import { Viewport } from '../three/viewport';
+import { Views2DPanel } from './views2d';
 import { exportHeightmapPNG, exportHeightmapR16, downloadJSON } from './util';
 import { PRESETS } from '../presets';
 
@@ -20,6 +21,7 @@ export class App {
   editor!: NodeEditor;
   props!: PropertiesPanel;
   viewport!: Viewport;
+  views2D!: Views2DPanel;
   resolution = 1024;
   private evalTimer: number | null = null;
   private lastResults = new Map<string, Heightmap>();
@@ -78,9 +80,20 @@ export class App {
         <div class="splitter v" id="split-pal"></div>
         <div class="center stacked" id="center">
           <section class="pane" id="pane-view">
-            <div class="pane-header">3D Viewport</div>
+            <div class="pane-header">
+              <span>3D Viewport</span>
+              <div class="pane-header-actions">
+                <button id="btn-2d" class="pane-hdr-btn" title="Toggle 2D Multi-Views (Top & Profiles)">◫ 2D Views</button>
+              </div>
+            </div>
             <div class="pane-body" id="viewport-body">
-              <div class="viewport-overlay" id="vp-controls"></div>
+              <div class="viewport-split-container" id="vp-split-container">
+                <div class="vp-3d-pane" id="vp-3d-pane">
+                  <div class="viewport-overlay" id="vp-controls"></div>
+                </div>
+                <div class="splitter v" id="split-2d" style="display:none;"></div>
+                <div class="vp-2d-pane" id="vp-2d-pane" style="display:none;"></div>
+              </div>
             </div>
           </section>
           <div class="splitter h" id="split-center"></div>
@@ -132,6 +145,7 @@ export class App {
     this.props.show(null);
     window.addEventListener('resize', () => {
       this.viewport.resize();
+      this.views2D?.render();
       this.editor?.fitView();
     });
   }
@@ -215,7 +229,24 @@ export class App {
         center.append(graphPane, splitCenter, viewPane);
       }
       onResize();
-      setTimeout(() => this.editor?.fitView(), 50);
+      setTimeout(() => {
+        this.views2D?.render();
+        this.editor?.fitView();
+      }, 50);
+    });
+
+    // 2D multi-view panel width splitter
+    const split2d = document.getElementById('split-2d')!;
+    const vpSplit = document.getElementById('vp-split-container')!;
+    makeDrag(split2d, e => {
+      const rect = vpSplit.getBoundingClientRect();
+      const w = rect.right - e.clientX;
+      const nw = Math.max(200, Math.min(rect.width * 0.75, w));
+      rootStyle.setProperty('--vp-2d-w', nw + 'px');
+      this.views2D?.render();
+    }, () => {
+      this.viewport.resize();
+      this.views2D?.render();
     });
   }
 
@@ -277,8 +308,13 @@ export class App {
   }
 
   private initViewport() {
-    const body = document.getElementById('viewport-body')!;
-    this.viewport = new Viewport(body);
+    const vp3d = document.getElementById('vp-3d-pane')!;
+    this.viewport = new Viewport(vp3d);
+
+    const vp2d = document.getElementById('vp-2d-pane')!;
+    this.views2D = new Views2DPanel(vp2d, () => this.toggle2D(false));
+    this.views2D.setScene(this.viewport.scene);
+    this.views2D.startLoop();
 
     const controls = document.getElementById('vp-controls')!;
     const mkBtn = (label: string, title: string, fn: () => void) => {
@@ -365,6 +401,24 @@ export class App {
     canvas.addEventListener('pointercancel', endMove);
   }
 
+  toggle2D(open?: boolean) {
+    const vp2d = document.getElementById('vp-2d-pane')!;
+    const split2d = document.getElementById('split-2d')!;
+    const btn2d = document.getElementById('btn-2d')!;
+    const shouldOpen = open !== undefined ? open : (vp2d.style.display === 'none');
+    vp2d.style.display = shouldOpen ? 'flex' : 'none';
+    split2d.style.display = shouldOpen ? 'block' : 'none';
+    btn2d.classList.toggle('active', shouldOpen);
+    this.views2D.isOpen = shouldOpen;
+    this.viewport.resize();
+    if (shouldOpen) {
+      requestAnimationFrame(() => {
+        this.views2D.resize();
+        this.views2D.render();
+      });
+    }
+  }
+
   /** Enter/exit viewport move-mode for a node (null to exit). */
   setMoveMode(nodeId: string | null) {
     const prev = this.moveNodeId;
@@ -445,6 +499,7 @@ export class App {
       });
     (document.getElementById('btn-fit') as HTMLButtonElement)
       .addEventListener('click', () => this.editor.fitView());
+    document.getElementById('btn-2d')?.addEventListener('click', () => this.toggle2D());
   }
 
   private bindKeys() {

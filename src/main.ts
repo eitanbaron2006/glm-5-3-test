@@ -1,6 +1,7 @@
 import './styles/main.css';
 import './styles/props.css';
 import './styles/editor.css';
+import './styles/views2d.css';
 import { App } from './ui/app';
 
 const app = new App(document.getElementById('app') as HTMLElement);
