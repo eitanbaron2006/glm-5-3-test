@@ -8,7 +8,7 @@ import { NodeTypeDefinition } from '../core/graph';
 import { FBM, mulberry32, PerlinNoise, voronoi } from '../core/noise';
 import { makeSize } from './generators';
 
-const PRI = '#e0564d';
+const PRI = '#8e352e';
 
 /** Shared smoothstep helper for [0,1]-clamped input. */
 const ss = (t: number) => {

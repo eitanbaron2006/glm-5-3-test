@@ -3,7 +3,7 @@ import { NodeTypeDefinition } from '../core/graph';
 import { FBM, NoiseType, voronoi, VoronoiFeature } from '../core/noise';
 import { makeSize, boxBlur } from './generators';
 
-const GEN = '#e8963c';
+const GEN = '#9c5c16';
 
 export const NoiseNode: NodeTypeDefinition = {
   type: 'noise',

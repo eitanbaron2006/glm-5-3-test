@@ -73,7 +73,7 @@ export const SmartColorNode: NodeTypeDefinition = {
   type: 'smartcolor',
   title: 'SmartColor',
   category: 'Materials',
-  color: '#e879c7',
+  color: '#7a3875',
   inputs: [
     { id: 'height', label: 'Height' },
     { id: 'slope', label: 'Slope' },

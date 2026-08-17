@@ -2,7 +2,7 @@ import { Heightmap } from '../core/heightmap';
 import { NodeTypeDefinition } from '../core/graph';
 import { makeSize } from './generators';
 
-const FLT = '#4f8fdf';
+const FLT = '#2d568c';
 
 export const ClampNode: NodeTypeDefinition = {
   type: 'clamp',

@@ -3,7 +3,7 @@ import { NodeTypeDefinition } from '../core/graph';
 import { mulberry32 } from '../core/noise';
 import { makeSize } from './generators';
 
-const ERO = '#3fb8a4';
+const ERO = '#246b62';
 
 /** Precomputed erosion brush offsets + normalized weights. */
 export function makeBrush(radius: number): { offsets: Int32Array; weights: Float32Array } {

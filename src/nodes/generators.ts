@@ -1,7 +1,7 @@
 import { Heightmap } from '../core/heightmap';
 import { NodeTypeDefinition } from '../core/graph';
 
-const GEN = '#e8963c';
+const GEN = '#9c5c16';
 
 export function makeSize(size: number): number {
   return Math.max(16, Math.min(8192, Math.round(size)));

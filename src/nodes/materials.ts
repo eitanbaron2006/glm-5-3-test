@@ -66,7 +66,7 @@ export const SetMapNode: NodeTypeDefinition = {
   type: 'setmap',
   title: 'SetMap',
   category: 'Materials',
-  color: '#c084fc',
+  color: '#70326a',
   inputs: [
     { id: 'height', label: 'Height' },
     { id: 'slope', label: 'Slope' },

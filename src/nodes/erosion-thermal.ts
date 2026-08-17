@@ -2,7 +2,7 @@ import { Heightmap } from '../core/heightmap';
 import { NodeTypeDefinition } from '../core/graph';
 import { makeSize } from './generators';
 
-const ERO = '#3fb8a4';
+const ERO = '#246b62';
 
 export const ThermalErosionNode: NodeTypeDefinition = {
   type: 'thermal',

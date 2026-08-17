@@ -2,7 +2,7 @@ import { Heightmap } from '../core/heightmap';
 import { NodeTypeDefinition } from '../core/graph';
 import { makeSize } from './generators';
 
-const SEL = '#d84f5f';
+const SEL = '#852839';
 
 /** Trapezoid falloff: 1 inside [pos-half, pos+half], smooth to 0 at ±range. */
 function falloff(v: number, pos: number, half: number, range: number): number {
@@ -42,7 +42,7 @@ export const OutputNode: NodeTypeDefinition = {
   type: 'output',
   title: 'Output',
   category: 'Output',
-  color: '#8fbf4d',
+  color: '#447728',
   inputs: [{ id: 'in', label: 'Terrain' }],
   outputs: [],
   params: [],

@@ -2,7 +2,7 @@ import { Heightmap } from '../core/heightmap';
 import { NodeTypeDefinition } from '../core/graph';
 import { makeSize } from './generators';
 
-const COM = '#b06fd8';
+const COM = '#683884';
 
 export const BlendNode: NodeTypeDefinition = {
   type: 'blend',

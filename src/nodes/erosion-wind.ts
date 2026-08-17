@@ -1,7 +1,7 @@
 import { Heightmap } from '../core/heightmap';
 import { NodeTypeDefinition } from '../core/graph';
 
-const ERO = '#3fb8a4';
+const ERO = '#246b62';
 
 /** Directional wind erosion — the third member of GAEA's erosion trio.
  *
