@@ -83,6 +83,8 @@ export class App {
             <div class="pane-header">
               <span>3D Viewport</span>
               <div class="pane-header-actions">
+                <button id="btn-save-cam" class="pane-hdr-btn" title="Set current 3D view as default (persists across refreshes)">📌 Set Default View</button>
+                <button id="btn-reset-cam" class="pane-hdr-btn" title="Reset camera to default view">↺ Reset View</button>
                 <button id="btn-2d" class="pane-hdr-btn active" title="Toggle 2D Multi-Views (Top & Profiles)">◫ 2D Views</button>
               </div>
             </div>
@@ -322,6 +324,29 @@ export class App {
     this.views2D.isOpen = true;
     this.views2D.setScene(this.viewport.scene);
     this.views2D.startLoop();
+
+    const btnSaveCam = document.getElementById('btn-save-cam');
+    if (btnSaveCam) {
+      btnSaveCam.addEventListener('click', () => {
+        this.viewport.setDefaultView();
+        const orig = btnSaveCam.textContent;
+        btnSaveCam.textContent = '✓ Saved!';
+        btnSaveCam.style.borderColor = '#10b981';
+        btnSaveCam.style.color = '#10b981';
+        setTimeout(() => {
+          btnSaveCam.textContent = orig;
+          btnSaveCam.style.borderColor = '';
+          btnSaveCam.style.color = '';
+        }, 1500);
+      });
+    }
+
+    const btnResetCam = document.getElementById('btn-reset-cam');
+    if (btnResetCam) {
+      btnResetCam.addEventListener('click', () => {
+        this.viewport.resetCamera();
+      });
+    }
 
     const controls = document.getElementById('vp-controls')!;
     const mkBtn = (label: string, title: string, fn: () => void) => {

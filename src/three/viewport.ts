@@ -16,6 +16,8 @@ export class Viewport {
   wireframe = false;
   waterLevel = 0;
   heightScale = 0.7;
+  defaultPos: THREE.Vector3;
+  defaultTarget: THREE.Vector3;
   private container: HTMLElement;
   private frameHandle = 0;
   private setmap: SetMapData | null = null;
@@ -38,14 +40,46 @@ export class Viewport {
     this.camera = new THREE.PerspectiveCamera(
       50, container.clientWidth / container.clientHeight, 0.05, 100
     );
-    this.camera.position.set(-2.0, 1.05, -1.35);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
-    this.controls.target.set(0, 0.10, 0);
-    this.controls.maxDistance = 12;
-    this.controls.minDistance = 0.3;
+    this.defaultPos = new THREE.Vector3(-0.48, 0.84, -2.32);
+    this.defaultTarget = new THREE.Vector3(0, 0.16, 0);
+
+    const savedPos = localStorage.getItem('tf_cam_pos');
+    const savedTarget = localStorage.getItem('tf_cam_target');
+    if (savedPos && savedTarget) {
+      try {
+        const p = JSON.parse(savedPos);
+        const t = JSON.parse(savedTarget);
+        this.camera.position.set(p.x, p.y, p.z);
+        this.controls.target.set(t.x, t.y, t.z);
+      } catch {
+        this.camera.position.copy(this.defaultPos);
+        this.controls.target.copy(this.defaultTarget);
+      }
+    } else {
+      this.camera.position.copy(this.defaultPos);
+      this.controls.target.copy(this.defaultTarget);
+    }
+
+    this.controls.addEventListener('end', () => {
+      localStorage.setItem('tf_cam_pos', JSON.stringify({
+        x: this.camera.position.x,
+        y: this.camera.position.y,
+        z: this.camera.position.z
+      }));
+      localStorage.setItem('tf_cam_target', JSON.stringify({
+        x: this.controls.target.x,
+        y: this.controls.target.y,
+        z: this.controls.target.z
+      }));
+    });
+
+    this.renderer.domElement.addEventListener('dblclick', () => {
+      this.resetCamera();
+    });
 
     this.sun = new THREE.DirectionalLight(0xfff2dd, 2.6);
     this.sun.position.set(3, 5, 2);
@@ -78,6 +112,33 @@ export class Viewport {
     this.renderer.setSize(w, h);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
+  }
+
+  resetCamera() {
+    this.camera.position.copy(this.defaultPos);
+    this.controls.target.copy(this.defaultTarget);
+    this.controls.update();
+    localStorage.removeItem('tf_cam_pos');
+    localStorage.removeItem('tf_cam_target');
+  }
+
+  setDefaultView() {
+    this.defaultPos.copy(this.camera.position);
+    this.defaultTarget.copy(this.controls.target);
+    localStorage.setItem('tf_cam_pos', JSON.stringify({
+      x: this.camera.position.x,
+      y: this.camera.position.y,
+      z: this.camera.position.z
+    }));
+    localStorage.setItem('tf_cam_target', JSON.stringify({
+      x: this.controls.target.x,
+      y: this.controls.target.y,
+      z: this.controls.target.z
+    }));
+    console.log('📌 Saved Custom Default Camera View:', {
+      position: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z },
+      target: { x: this.controls.target.x, y: this.controls.target.y, z: this.controls.target.z }
+    });
   }
 
   /** Rebuild the terrain mesh from a heightmap. */

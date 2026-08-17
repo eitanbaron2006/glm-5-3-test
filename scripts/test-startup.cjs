@@ -13,10 +13,10 @@ const URL = 'http://localhost:5173/';
   await page.setViewport({ width: 1700, height: 1000 });
 
   await page.goto(URL, { waitUntil: 'networkidle0', timeout: 60000 });
-  await new Promise(r => setTimeout(r, 3500));
+  await new Promise(r => setTimeout(r, 3000));
 
-  await page.screenshot({ path: 'scripts/exact-startup-view.png' });
-  console.log('Saved scripts/exact-startup-view.png');
+  await page.screenshot({ path: 'scripts/with-buttons.png' });
+  console.log('Saved scripts/with-buttons.png');
 
   await browser.close();
 })();
