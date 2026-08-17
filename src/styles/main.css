@@ -157,9 +157,9 @@ select:focus { border-color: var(--accent2); }
 .center.stacked {
   flex-direction: column;
 }
-#pane-graph { flex: 0 0 var(--graph-size, 50%); }
+#pane-graph { flex: 0 0 var(--graph-size, 25%); }
 #pane-view  { flex: 1 1 0; }
-.center.stacked #pane-graph { flex: 0 0 var(--graph-size, 50%); }
+.center.stacked #pane-graph { flex: 0 0 var(--graph-size, 25%); }
 .center.stacked #pane-view  { flex: 1 1 0; }
 
 .palette {

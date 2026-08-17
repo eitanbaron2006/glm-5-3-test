@@ -83,7 +83,7 @@ export class App {
             <div class="pane-header">
               <span>3D Viewport</span>
               <div class="pane-header-actions">
-                <button id="btn-2d" class="pane-hdr-btn" title="Toggle 2D Multi-Views (Top & Profiles)">◫ 2D Views</button>
+                <button id="btn-2d" class="pane-hdr-btn active" title="Toggle 2D Multi-Views (Top & Profiles)">◫ 2D Views</button>
               </div>
             </div>
             <div class="pane-body" id="viewport-body">
@@ -91,8 +91,8 @@ export class App {
                 <div class="vp-3d-pane" id="vp-3d-pane">
                   <div class="viewport-overlay" id="vp-controls"></div>
                 </div>
-                <div class="splitter v" id="split-2d" style="display:none;"></div>
-                <div class="vp-2d-pane" id="vp-2d-pane" style="display:none;"></div>
+                <div class="splitter v" id="split-2d"></div>
+                <div class="vp-2d-pane" id="vp-2d-pane"></div>
               </div>
             </div>
           </section>
@@ -143,6 +143,12 @@ export class App {
     this.bindLayout();
     this.loadPreset(0);
     this.props.show(null);
+    requestAnimationFrame(() => {
+      this.viewport.resize();
+      this.views2D?.resize();
+      this.views2D?.render();
+      this.editor?.fitView();
+    });
     window.addEventListener('resize', () => {
       this.viewport.resize();
       this.views2D?.render();
@@ -313,6 +319,7 @@ export class App {
 
     const vp2d = document.getElementById('vp-2d-pane')!;
     this.views2D = new Views2DPanel(vp2d, () => this.toggle2D(false));
+    this.views2D.isOpen = true;
     this.views2D.setScene(this.viewport.scene);
     this.views2D.startLoop();
 

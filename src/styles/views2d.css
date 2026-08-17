@@ -144,7 +144,7 @@
 
 /* Top Row (Top-down view) */
 .v2d-row-top {
-  height: var(--v2d-top-h, 50%);
+  height: var(--v2d-top-h, 58%);
   min-height: 70px;
   max-height: calc(100% - 70px);
   position: relative;

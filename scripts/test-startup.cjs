@@ -12,12 +12,11 @@ const URL = 'http://localhost:5173/';
   const page = await browser.newPage();
   await page.setViewport({ width: 1700, height: 1000 });
 
-  // Navigate to page (no manual clicks - test default startup state)
   await page.goto(URL, { waitUntil: 'networkidle0', timeout: 60000 });
   await new Promise(r => setTimeout(r, 3500));
 
-  await page.screenshot({ path: 'scripts/startup-default-state.png' });
-  console.log('Saved scripts/startup-default-state.png');
+  await page.screenshot({ path: 'scripts/exact-startup-view.png' });
+  console.log('Saved scripts/exact-startup-view.png');
 
   await browser.close();
 })();

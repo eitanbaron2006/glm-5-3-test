@@ -38,12 +38,12 @@ export class Viewport {
     this.camera = new THREE.PerspectiveCamera(
       50, container.clientWidth / container.clientHeight, 0.05, 100
     );
-    this.camera.position.set(1.6, 1.2, 1.6);
+    this.camera.position.set(-2.0, 1.05, -1.35);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
-    this.controls.target.set(0, 0.1, 0);
+    this.controls.target.set(0, 0.10, 0);
     this.controls.maxDistance = 12;
     this.controls.minDistance = 0.3;
 
