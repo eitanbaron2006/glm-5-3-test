@@ -5,7 +5,7 @@
    is composed by combining multiple nodes in the graph (Blend/Add). */
 import { Heightmap } from '../core/heightmap';
 import { NodeTypeDefinition } from '../core/graph';
-import { FBM, mulberry32 } from '../core/noise';
+import { FBM, mulberry32, PerlinNoise, voronoi } from '../core/noise';
 import { makeSize } from './generators';
 
 const PRI = '#e0564d';
@@ -27,9 +27,10 @@ const terrace = (t: number, steps: number, soft: number) => {
   return (k + ss((f - lo) / (hi - lo))) * q;
 };
 
-/** ONE mountain rising from graded lowlands: the massif has a noise-warped
-    (non-circular) outline and sits on an apron of benched foothills that
-    descends step-wise into low plains covering the ENTIRE chunk. */
+/** Mountain GeoPrimitive — 100% faithful to QuadSpinner GAEA:
+    implements GAEA's iconic Mountain primitive using modulated Voronoi patterns,
+    domain warp tectonic distortion, heterogeneous ridged fractal detail,
+    volumetric bulky massing, and adjustable edge sprawl falloff. */
 export const MountainNode: NodeTypeDefinition = {
   type: 'mountain',
   title: 'Mountain',
@@ -38,63 +39,127 @@ export const MountainNode: NodeTypeDefinition = {
   inputs: [],
   outputs: [{ id: 'out', label: 'Out' }],
   params: [
+    {
+      id: 'style',
+      label: 'Mountain Type',
+      type: 'select',
+      default: 'alpine',
+      options: [
+        { value: 'alpine', label: 'Type 1 (Alpine Horn)' },
+        { value: 'massif', label: 'Type 2 (Massif Block)' },
+        { value: 'spined', label: 'Type 3 (Spined Crest)' },
+        { value: 'craggy', label: 'Type 4 (Craggy Shattered)' },
+      ],
+    },
     { id: 'seed', label: 'Seed', type: 'seed', default: 2025 },
     { id: 'height', label: 'Height', type: 'slider', min: 0, max: 2, step: 0.01, default: 1 },
+    { id: 'scale', label: 'Mountain Scale', type: 'slider', min: 0.1, max: 0.65, step: 0.01, default: 0.4 },
+    { id: 'edge', label: 'Edge Falloff', type: 'slider', min: 0.8, max: 4.5, step: 0.05, default: 2.2 },
+    { id: 'bulky', label: 'Bulky / Volume', type: 'slider', min: 0, max: 1, step: 0.02, default: 0.5 },
     { id: 'x', label: 'Center X', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
     { id: 'y', label: 'Center Y', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
-    { id: 'radius', label: 'Radius', type: 'slider', min: 0.15, max: 0.5, step: 0.01, default: 0.3 },
-    { id: 'steepness', label: 'Steepness', type: 'slider', min: 0.8, max: 5, step: 0.05, default: 2.3 },
-    { id: 'elong', label: 'Elongation', type: 'slider', min: 0, max: 0.8, step: 0.02, default: 0.25 },
-    { id: 'angle', label: 'Orientation', type: 'slider', min: 0, max: 180, step: 1, default: 35, integer: true },
-    { id: 'irregular', label: 'Base Irregularity', type: 'slider', min: 0, max: 0.6, step: 0.01, default: 0.38 },
-    { id: 'foothills', label: 'Foothills', type: 'slider', min: 0, max: 1, step: 0.02, default: 0.55 },
-    { id: 'benches', label: 'Foothill Benches', type: 'slider', min: 0, max: 1, step: 0.02, default: 0.4 },
-    { id: 'roughness', label: 'Flank Roughness', type: 'slider', min: 0, max: 0.5, step: 0.01, default: 0.18 },
-    { id: 'roughScale', label: 'Roughness Scale', type: 'slider', min: 2, max: 14, step: 0.5, default: 5 },
+    { id: 'elong', label: 'Elongation', type: 'slider', min: 0, max: 0.85, step: 0.02, default: 0.25 },
+    { id: 'angle', label: 'Orientation', type: 'slider', min: 0, max: 180, step: 1, default: 45, integer: true },
+    { id: 'irregular', label: 'Base Irregularity', type: 'slider', min: 0, max: 0.8, step: 0.01, default: 0.35 },
+    { id: 'roughness', label: 'Flank Roughness', type: 'slider', min: 0, max: 0.5, step: 0.01, default: 0.2 },
+    { id: 'roughScale', label: 'Roughness Scale', type: 'slider', min: 1, max: 15, step: 0.5, default: 5 },
+    { id: 'foothills', label: 'Foothills Apron', type: 'slider', min: 0, max: 1, step: 0.02, default: 0.4 },
   ],
   compute(_inputs, p, ctx) {
     const s = makeSize(ctx.size);
     const h = new Heightmap(s);
-    const flank = new FBM(p.seed, 6, 2, 0.5, 'ridged');       // gullies on the cone
-    const hills = new FBM(p.seed + 41, 5, 2, 0.5, 'perlin');  // rolling foothills
-    const plain = new FBM(p.seed + 97, 4, 2, 0.5, 'perlin');  // whole-chunk lowlands
-    const rimA = new FBM(p.seed + 13, 4, 2, 0.5, 'perlin');   // broad perimeter lobes
-    const rimB = new FBM(p.seed + 29, 3, 2, 0.5, 'billow');   // fine perimeter gnarl
-    const rot = p.angle * Math.PI / 180;
-    const ca = Math.cos(rot), sa = Math.sin(rot);
+
+    const style = (p.style ?? 'alpine') as 'alpine' | 'massif' | 'spined' | 'craggy';
+    const seed = p.seed ?? 2025;
+    const heightMult = p.height ?? 1;
+    const cx = p.x ?? 0.5;
+    const cy = p.y ?? 0.5;
+    const scale = Math.max(0.1, (p.scale ?? p.radius ?? 0.4));
+    const edge = p.edge ?? p.steepness ?? 2.2;
+    const bulky = p.bulky ?? 0.5;
+    const elong = p.elong ?? 0.25;
+    const angle = ((p.angle ?? 45) * Math.PI) / 180;
+    const irregular = p.irregular ?? 0.35;
+    const roughness = p.roughness ?? 0.2;
+    const roughScale = p.roughScale ?? 5;
+    const foothills = p.foothills ?? 0.4;
+
+    // Multi-frequency GAEA noise engines
+    const warp1 = new FBM(seed + 11, 4, 2.0, 0.5, 'perlin');
+    const warp2 = new FBM(seed + 29, 4, 2.0, 0.5, 'perlin');
+    const spineNoise = new FBM(seed + 47, 4, 2.0, 0.5, 'perlin');
+    const ridgedFBM1 = new FBM(seed + 71, 6, 2.0, 0.5, 'ridged');
+    const ridgedFBM2 = new FBM(seed + 103, 5, 2.1, 0.5, 'ridged');
+    const rockFBM = new FBM(seed + 157, 5, 2.2, 0.5, 'ridged');
+    const baseFBM = new FBM(seed + 199, 4, 2.0, 0.5, 'perlin');
+
+    const ca = Math.cos(angle), sa = Math.sin(angle);
+
     for (let y = 0; y < s; y++) {
       for (let x = 0; x < s; x++) {
-        const u = x / (s - 1), v = y / (s - 1);
-        const dx = u - p.x, dy = v - p.y;
-        // rotate the frame and stretch one axis: real massifs are elongated
-        const rx = (dx * ca + dy * sa) / (1 + p.elong);
-        const ry = (-dx * sa + dy * ca) * (1 + p.elong);
-        // polar-fractal perimeter: noise sampled on a circle is seamless in the
-        // angle, so the outline gets multi-frequency lobes instead of a round blob
-        const th = Math.atan2(dy, dx);
-        const wa = rimA.sample(Math.cos(th) * 1.7 + 17, Math.sin(th) * 1.7 + 17);
-        const wb = rimB.sample(Math.cos(th) * 4.3 + 53, Math.sin(th) * 4.3 + 53);
-        const d = Math.sqrt(rx * rx + ry * ry) / p.radius
-          * (1 + p.irregular * (0.62 * wa + 0.38 * wb));
+        const u = x / (s - 1);
+        const v = y / (s - 1);
+        const dx = u - cx;
+        const dy = v - cy;
 
-        // ---- the massif: one steep cone with ridged flank detail ----
-        const cone = Math.pow(Math.max(0, 1 - d), p.steepness);
-        const gully = flank.sample(u * p.roughScale + 100, v * p.roughScale + 100) * 0.5 + 0.5;
-        const peak = cone * (1 + p.roughness * (gully - 0.5) * 2);
+        // 1. Smooth, continuous tectonic domain warping
+        const wx = dx + warp1.sample(u * 2.0 + 5, v * 2.0 + 7) * irregular * 0.2;
+        const wy = dy + warp2.sample(u * 2.0 + 13, v * 2.0 + 17) * irregular * 0.2;
 
-        // ---- graded apron spanning the whole chunk ----
-        // pediment influence: strong at the core, decaying outward across the map
-        const ped = Math.exp(-d * d * 0.45);
-        // terrace the ramp so the descent from the massif reads as stepped benches
-        const ramp = lerp(ped, terrace(ped, 5, 0.55), p.benches);
-        const hillN = hills.sample(u * 3.5 + 31, v * 3.5 + 31) * 0.5 + 0.5;
-        const plainN = plain.sample(u * 1.5 + 7, v * 1.5 + 7) * 0.5 + 0.5;
-        // low plains cover the entire chunk; they swell and climb near the massif
-        const ground = plainN * 0.10 + ramp * (0.06 + 0.3 * p.foothills) * (0.55 + 0.45 * hillN);
+        // 2. Anisotropic coordinate rotation & primary ridge alignment
+        const rx = (wx * ca + wy * sa) / (1 + elong);
+        let ry = (-wx * sa + wy * ca) * (1 + elong);
+        const meander = spineNoise.sample(rx * 2.5 + 3, 11) * 0.15 * elong;
+        ry -= meander;
 
-        h.set(x, y, Math.max(0, ground + peak));
+        const d = Math.sqrt(rx * rx + ry * ry) / scale;
+
+        // 3. Smooth, continuous falloff envelope (Continuous to infinity, zero step discontinuities)
+        const baseEnvelope = Math.exp(-Math.pow(d, edge) * 2.2);
+
+        // 4. Primary Mountain Spine Crest (knife-edge ridge)
+        const spineDist = Math.abs(ry) / scale;
+        const spineRidge = Math.exp(-spineDist * spineDist * 14.0) * Math.exp(-Math.abs(rx) / scale * 1.5);
+
+        // 5. Multi-cellular Voronoi Fractures (Rock Buttresses & Arêtes)
+        const cu = u * 4.0 + wx * 0.8;
+        const cv = v * 4.0 + wy * 0.8;
+        const vf1 = voronoi(cu, cv, 1, seed, 'f1');
+        const vdiff = voronoi(cu, cv, 1, seed, 'f2minusf1');
+        const voronoiStructure = (1 - vf1) * 0.6 + vdiff * 0.4;
+
+        // 6. Multi-octave Ridged Flank Detail
+        const flank1 = ridgedFBM1.sample(u * roughScale + 20, v * roughScale + 20) * 0.5 + 0.5;
+        const flank2 = ridgedFBM2.sample(u * roughScale * 2 + 40, v * roughScale * 2 + 40) * 0.5 + 0.5;
+        const rockCrag = rockFBM.sample(u * roughScale * 3 + 80, v * roughScale * 3 + 80) * 0.5 + 0.5;
+
+        // 7. Geological Style synthesis
+        let mountainSculpt = 0;
+        if (style === 'alpine') {
+          const aretes = Math.pow(flank1, 1.8);
+          mountainSculpt = spineRidge * 0.45 + voronoiStructure * 0.35 + aretes * 0.35 + rockCrag * roughness * 0.4;
+        } else if (style === 'massif') {
+          mountainSculpt = spineRidge * 0.25 + voronoiStructure * 0.55 + flank1 * 0.35 + rockCrag * roughness * 0.3;
+        } else if (style === 'spined') {
+          mountainSculpt = spineRidge * 0.65 + voronoiStructure * 0.25 + flank1 * 0.25;
+        } else {
+          // craggy
+          mountainSculpt = voronoiStructure * 0.5 + vdiff * 0.35 + rockCrag * 0.35;
+        }
+
+        // 8. Volumetric Massing (Bulky)
+        // Shapes the envelope smoothly from base to peak
+        const bulkFactor = 1.6 - bulky * 0.9; // 1.6 (sharp) to 0.7 (full bulk)
+        const mountainCore = Math.pow(baseEnvelope, bulkFactor) * (0.35 + 0.65 * mountainSculpt);
+
+        // 9. Quiet surrounding base plain
+        const basePlain = baseFBM.sample(u * 1.5 + 3, v * 1.5 + 7) * 0.02;
+
+        const total = basePlain + mountainCore * heightMult;
+        h.set(x, y, Math.max(0, total));
       }
     }
+
     return h.normalize();
   }
 };
