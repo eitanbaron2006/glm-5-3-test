@@ -7,14 +7,42 @@
   flex-direction: column;
 }
 
+.prop-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 6px;
+  gap: 8px;
+}
+
 .prop-title {
-  padding: 10px 12px 8px;
   font-size: 13px;
   font-weight: 600;
   color: #fff;
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.btn-reset-params {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-dim);
+  background: #21252b;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-reset-params:hover {
+  color: #fff;
+  background: #2b313a;
+  border-color: var(--accent);
 }
 
 .prop-node-color {

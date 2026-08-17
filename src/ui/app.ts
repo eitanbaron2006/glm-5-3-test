@@ -207,6 +207,10 @@ export class App {
     });
   }
 
+  selectNode(id: string | null) {
+    this.editor.selectNode(id);
+  }
+
   private initEditor(graph: Graph, resetHistory = true) {
     // Replace the container with a fresh clone: initEditor runs on every preset
     // load / new graph, and cloning is the only reliable way to purge event

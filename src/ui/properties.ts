@@ -41,6 +41,9 @@ export class PropertiesPanel {
     const def = nodeDef(node.type);
     if (!def) return;
 
+    const header = document.createElement('div');
+    header.className = 'prop-header';
+
     const title = document.createElement('div');
     title.className = 'prop-title';
     const dot = document.createElement('span');
@@ -50,7 +53,25 @@ export class PropertiesPanel {
     const t = document.createElement('span');
     t.textContent = def.title;
     title.appendChild(t);
-    c.appendChild(title);
+    header.appendChild(title);
+
+    if (def.params && def.params.length > 0) {
+      const resetBtn = document.createElement('button');
+      resetBtn.className = 'btn-reset-params';
+      resetBtn.innerHTML = '↺ Reset';
+      resetBtn.title = 'Reset all parameters to default values';
+      resetBtn.addEventListener('click', () => {
+        for (const p of def.params) {
+          if (p.default !== undefined) {
+            node.params[p.id] = p.default;
+          }
+        }
+        this.onParamChanged();
+        this.show(node.id);
+      });
+      header.appendChild(resetBtn);
+    }
+    c.appendChild(header);
 
     const sub = document.createElement('div');
     sub.className = 'prop-subtitle';
