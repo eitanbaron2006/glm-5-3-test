@@ -15,7 +15,7 @@ export class Viewport {
   colorMode: ColorMode = 'biome';
   wireframe = false;
   waterLevel = 0;
-  heightScale = 1;
+  heightScale = 0.7;
   private container: HTMLElement;
   private frameHandle = 0;
   private setmap: SetMapData | null = null;

@@ -22,8 +22,8 @@
 }
 
 .vp-2d-pane {
-  width: var(--vp-2d-w, 42%);
-  min-width: 240px;
+  width: var(--vp-2d-w, 30%);
+  min-width: 180px;
   max-width: 75%;
   height: 100%;
   display: flex;
