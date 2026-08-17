@@ -130,7 +130,10 @@ export class App {
     this.bindLayout();
     this.loadPreset(0);
     this.props.show(null);
-    window.addEventListener('resize', () => this.viewport.resize());
+    window.addEventListener('resize', () => {
+      this.viewport.resize();
+      this.editor?.fitView();
+    });
   }
 
   /* ---------- resizable panels + layout toggle ---------- */
@@ -144,11 +147,14 @@ export class App {
     const splitProps = document.getElementById('split-props')!;
     const splitCenter = document.getElementById('split-center')!;
 
-    const onResize = () => this.viewport.resize();
+    const onResize = () => {
+      this.viewport.resize();
+    };
 
     const makeDrag = (
       handle: HTMLElement,
-      onMove: (e: PointerEvent) => void
+      onMove: (e: PointerEvent) => void,
+      onEnd?: () => void
     ) => {
       handle.addEventListener('pointerdown', e => {
         e.preventDefault();
@@ -161,6 +167,7 @@ export class App {
           handle.removeEventListener('pointerup', up);
           try { handle.releasePointerCapture(ev.pointerId); } catch { /* ignore */ }
           onResize();
+          onEnd?.();
         };
         handle.addEventListener('pointermove', move);
         handle.addEventListener('pointerup', up);
@@ -172,7 +179,7 @@ export class App {
       const w = e.clientX - pal.getBoundingClientRect().left;
       const nw = Math.max(140, Math.min(400, w));
       rootStyle.setProperty('--pal-w', nw + 'px');
-    });
+    }, () => this.editor?.fitView());
 
     // properties width (drag left = wider)
     makeDrag(splitProps, e => {
@@ -180,7 +187,7 @@ export class App {
       const w = r.right - e.clientX;
       const nw = Math.max(200, Math.min(480, w));
       rootStyle.setProperty('--props-w', nw + 'px');
-    });
+    }, () => this.editor?.fitView());
 
     // center split: graph vs viewport (works for side-by-side and stacked)
     makeDrag(splitCenter, e => {
@@ -193,7 +200,7 @@ export class App {
         : (e.clientX - rect.left) / rect.width;
       const pct = Math.max(20, Math.min(80, frac * 100));
       rootStyle.setProperty('--graph-size', pct + '%');
-    });
+    }, () => this.editor?.fitView());
 
     // layout toggle: side-by-side <-> graph below viewport
     const layoutBtn = document.getElementById('btn-layout')!;
@@ -208,6 +215,7 @@ export class App {
         center.append(graphPane, splitCenter, viewPane);
       }
       onResize();
+      setTimeout(() => this.editor?.fitView(), 50);
     });
   }
 

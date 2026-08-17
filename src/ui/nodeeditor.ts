@@ -134,7 +134,7 @@ export class NodeEditor {
     const w = this.svg.clientWidth || 600;
     const h = this.svg.clientHeight || 400;
     if (!nodes.length) {
-      this.view = { x: 40, y: 30, zoom: 1 };
+      this.view = { x: 40, y: 30, zoom: 1.2 };
       this.updateView();
       return;
     }
@@ -144,10 +144,15 @@ export class NodeEditor {
       maxX = Math.max(maxX, n.x + 170);
       maxY = Math.max(maxY, n.y + nodeHeight(n));
     }
-    const pad = 40;
-    const zoom = Math.min(
-      Math.max(Math.min((w - pad * 2) / (maxX - minX), (h - pad * 2) / (maxY - minY)), 0.25), 1.2
-    );
+    // Margins ensuring all nodes, ports, and shadows fit 100% inside the visible area
+    const padX = 40;
+    const padY = 24;
+    const maxZoomW = Math.max(0.1, (w - padX * 2) / (maxX - minX));
+    const maxZoomH = Math.max(0.1, (h - padY * 2) / (maxY - minY));
+    // Strictly fit within available width & height so nodes NEVER overflow or get cut off
+    const fitAllZoom = Math.min(maxZoomW, maxZoomH);
+    // Allow up to 1.2x (20% larger than 1.0) whenever space permits, without overflowing width
+    const zoom = Math.min(fitAllZoom, 1.2);
     this.view.zoom = zoom;
     this.view.x = (w - (maxX - minX) * zoom) / 2 - minX * zoom;
     this.view.y = (h - (maxY - minY) * zoom) / 2 - minY * zoom;
