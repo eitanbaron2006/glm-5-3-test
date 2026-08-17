@@ -69,7 +69,6 @@ export class App {
           <button id="btn-export-r16" title="16-bit RAW heightmap for game engines">Export R16</button>
         </div>
         <div class="spacer"></div>
-        <div class="tb-group"><button id="btn-fit" title="Fit graph to view">⤢ Fit</button></div>
         <div class="tb-group">
           <button id="btn-layout" title="Toggle layout: side-by-side / graph below viewport">▦ Layout</button>
         </div>
@@ -86,7 +85,12 @@ export class App {
           </section>
           <div class="splitter h" id="split-center"></div>
           <section class="pane" id="pane-graph">
-            <div class="pane-header">Node Graph</div>
+            <div class="pane-header">
+              <span>Node Graph</span>
+              <div class="pane-header-actions">
+                <button id="btn-fit" class="pane-hdr-btn" title="Fit graph to view">⤢ Fit</button>
+              </div>
+            </div>
             <div class="pane-body" id="graph-body"></div>
           </section>
         </div>

@@ -240,6 +240,7 @@ select:focus { border-color: var(--accent2); }
 .pane-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   height: 30px;
   padding: 0 10px;
@@ -251,6 +252,36 @@ select:focus { border-color: var(--accent2); }
   letter-spacing: 0.8px;
   text-transform: uppercase;
   flex-shrink: 0;
+}
+
+.pane-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pane-hdr-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text-dim);
+  background: #21252b;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pane-hdr-btn:hover {
+  color: #fff;
+  background: #2b313a;
+  border-color: var(--accent);
 }
 
 .pane-body { flex: 1; min-height: 0; position: relative; }
