@@ -224,17 +224,22 @@ export const MountainV2Node: NodeTypeDefinition = {
         : { width: 1.06, maskQ: 1.7, floor: 0.28, prom: 0.46, thermal: 23 };
 
     // Per-style geology: oct = ridge octaves (auto-capped by resolution),
-    // sharp = crest sharpening exponent, fluvial = dendritic channel
-    // carve, crest = arete re-crisp unsharp, rock = rock-break detail on
-    // steep faces, soften = Old smoothing passes, strata = sedimentary
-    // benching. Erosion (thermal + fluvial) is ALWAYS on — that is what
-    // makes a mountain read natural; styles only scale its intensity.
+    // crestExp = ridge crest profile (2 = knife-edged, <1.5 = soft rounded
+    // crests), softMix = blend toward calm smooth fBm mass (the GAEA raw
+    // node is a clean large-scale base — Basic stays calm), gain = octave
+    // amplitude falloff (lower = calmer fine detail), sharp = crest
+    // sharpening exponent, fluvial = dendritic channel carve, crest =
+    // arete re-crisp unsharp, rock = rock-break detail on steep faces,
+    // soften = Old smoothing passes, strata = sedimentary benching,
+    // talusMul = thermal relaxation strength (higher = smoother aprons).
+    // Erosion (thermal + fluvial) is ALWAYS on — that is what makes a
+    // mountain read natural; styles only scale its intensity.
     const styleCfg = {
-      basic:  { oct: 7, sharp: 1.22, fluvial: 0.30, crest: 0.34, rock: 0.55, soften: 0, strata: 0 },
-      eroded: { oct: 7, sharp: 1.10, fluvial: 0.85, crest: 0.16, rock: 0.30, soften: 1, strata: 0 },
-      old:    { oct: 5, sharp: 0.85, fluvial: 0.45, crest: 0.04, rock: 0.10, soften: 3, strata: 0 },
-      alpine: { oct: 8, sharp: 1.35, fluvial: 0.38, crest: 0.55, rock: 0.75, soften: 0, strata: 0 },
-      strata: { oct: 6, sharp: 1.05, fluvial: 0.32, crest: 0.28, rock: 0.45, soften: 0, strata: 0.85 },
+      basic:  { oct: 6, crestExp: 1.35, softMix: 0.32, gain: 0.46, sharp: 0.94, fluvial: 0.22, crest: 0.10, rock: 0.16, soften: 0, strata: 0,    talusMul: 1.15 },
+      eroded: { oct: 7, crestExp: 1.60, softMix: 0.15, gain: 0.50, sharp: 1.06, fluvial: 0.85, crest: 0.16, rock: 0.28, soften: 1, strata: 0,    talusMul: 1.00 },
+      old:    { oct: 5, crestExp: 1.10, softMix: 0.40, gain: 0.44, sharp: 0.85, fluvial: 0.42, crest: 0.04, rock: 0.08, soften: 3, strata: 0,    talusMul: 1.25 },
+      alpine: { oct: 8, crestExp: 2.00, softMix: 0.00, gain: 0.55, sharp: 1.35, fluvial: 0.38, crest: 0.55, rock: 0.70, soften: 0, strata: 0,    talusMul: 0.85 },
+      strata: { oct: 6, crestExp: 1.50, softMix: 0.20, gain: 0.50, sharp: 1.02, fluvial: 0.30, crest: 0.26, rock: 0.40, soften: 0, strata: 0.85, talusMul: 1.05 },
     }[style];
 
     // Resolution-safe detail budget: no octave may alias (wavelength >= 2.6px).
@@ -253,6 +258,7 @@ export const MountainV2Node: NodeTypeDefinition = {
     const fineW = new FBM(seed + 43, 2, 2.0, 0.5, 'perlin');     // channel meander warp
     const angFBM = new FBM(seed + 53, 3, 2.0, 0.5, 'perlin');    // silhouette wobble
     const core = new PerlinNoise(seed + 47);                     // ridged multifractal
+    const softFBM = new FBM(seed + 91, 4, 2.0, 0.5, 'perlin');   // calm mass blending noise
     const chan = new PerlinNoise(seed + 61);                     // fluvial channels
     const rockN = new PerlinNoise(seed + 71);                    // rock-break detail
     const plainFBM = new FBM(seed + 199, 3, 2.0, 0.5, 'perlin'); // surrounding plain
@@ -285,14 +291,21 @@ export const MountainV2Node: NodeTypeDefinition = {
         const bend = baseFreq * Math.pow(2.07, 0.3 * o);
         let sig = 1 - Math.abs(core.noise(su * f + wx * bend, sv * f + wy * bend));
         if (sig < 0) sig = 0;
-        sig = sig * sig * wgt;
+        sig = Math.pow(sig, styleCfg.crestExp) * wgt;
         sum += sig * amp;
         norm += amp;
-        wgt = Math.min(1, sig * 2.1);
-        amp *= 0.52;
+        wgt = Math.min(1, sig * (1.4 + 0.35 * styleCfg.crestExp));
+        amp *= styleCfg.gain;
         f *= 2.07;
       }
-      const ridged = sum / norm;
+      let ridged = sum / norm;
+      // Calm-terrain blend: mix the ridge hierarchy toward smooth fBm
+      // mass — the raw GAEA node is a clean large-scale base, so Basic /
+      // Old lean smooth while Alpine stays knife-edged.
+      if (styleCfg.softMix > 0) {
+        const soft = softFBM.sample(su * baseFreq * 1.3 + 71, sv * baseFreq * 1.3 + 89) * 0.5 + 0.5;
+        ridged = ridged * (1 - styleCfg.softMix) + soft * styleCfg.softMix;
+      }
       const vf = voroField((u + wx * 1.4) * subFreq, (v + wy * 1.4) * subFreq, seed + 301);
       const swell = 0.84 + 0.32 * Math.pow(Math.max(0, 1 - Math.min(vf.f1 * 1.3, 1)), 1.6);
       return { wx, wy, su, sv, rx, ry, rad, d, env, ridged, swell };
@@ -365,7 +378,7 @@ export const MountainV2Node: NodeTypeDefinition = {
     //    slumps downhill step by step — flanks smooth into stable aprons
     //    while crests stay crisp. THE pass that kills the procedural
     //    "pattern" look of raw noise geometry.
-    thermalErode(h, thermalIters, 2.1, 3.9, 0.45);
+    thermalErode(h, thermalIters, 2.1 * styleCfg.talusMul, 3.9 * styleCfg.talusMul, 0.45);
 
     // 8. Fluvial channels + rock-break + arete re-crisp, driven by the
     //    ERODED slopes (gullies follow the mountain's actual drainage).
