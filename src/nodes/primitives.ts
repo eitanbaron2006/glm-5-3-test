@@ -34,6 +34,15 @@ const terrace = (t: number, steps: number, soft: number) => {
     summit with dendritic branching ridges, sharp crests over smooth
     valleys, a foothill skirt fanning into quiet plains.
 
+    Behavior follows the real node, verified against the official docs
+    (GAEA 2, docs.gaea.app — Mountain, Terrain › Primitive) and renderBucket's
+    Lush Valleys tutorial (GAEA 1.3.2, youtube.com/watch?v=7XfdVYVMYs0):
+    the raw Mountain is a clean large-scale BASE — artists add Fractal
+    Terraces, ridge noise, and erosion downstream — so Basic is the default
+    style. Bulk High is officially "thick, heavy mountains with substantial
+    volume and broad bases"; in the tutorial, enabling Bulky makes the whole
+    mass "a ton higher" via a fuller body and broader base.
+
     Style modulates geology: Basic (clean construction mass), Eroded
     (weathered gullies, worn crests), Old (ancient, rounded, softened),
     Alpine (young, sharp, dramatic relief), Strata (sedimentary banding).
@@ -52,7 +61,7 @@ export const MountainV2Node: NodeTypeDefinition = {
       id: 'style',
       label: 'Style',
       type: 'select',
-      default: 'eroded',
+      default: 'basic',
       options: [
         { value: 'basic', label: 'Basic' },
         { value: 'eroded', label: 'Eroded' },
@@ -83,7 +92,7 @@ export const MountainV2Node: NodeTypeDefinition = {
     const s = makeSize(ctx.size);
     const h = new Heightmap(s);
 
-    const style = (p.style ?? 'eroded') as 'basic' | 'eroded' | 'old' | 'alpine' | 'strata';
+    const style = (p.style ?? 'basic') as 'basic' | 'eroded' | 'old' | 'alpine' | 'strata';
     const seed = p.seed ?? 2025;
     const heightMult = p.height ?? 1;
     const cx = p.x ?? 0.5;
@@ -98,7 +107,7 @@ export const MountainV2Node: NodeTypeDefinition = {
     const bulkCfg = bulk === 'low'
       ? { q: 2.6, floor: 0.18, width: 0.88 }
       : bulk === 'high'
-        ? { q: 1.25, floor: 0.58, width: 1.4 }
+        ? { q: 1.1, floor: 0.6, width: 1.55 }
         : { q: 2.05, floor: 0.32, width: 1.0 };
 
     // Per-style geology: ridge band steepness (kept LOW so ridge bodies stay
@@ -195,8 +204,9 @@ export const MountainV2Node: NodeTypeDefinition = {
         // 7. Old mountains round back toward the smooth dome
         core = lerp(core, base * 0.85, styleCfg.soften);
 
-        // 8. Summit emphasis: single dominant peak where the ridges converge
-        core += Math.exp(-d * d * 22) * 0.15;
+        // 8. Summit emphasis: single dominant peak where the ridges converge;
+        //    bulky mass keeps a proportionally taller central summit
+        core += Math.exp(-d * d * 22) * (0.15 + (bulk === 'high' ? 0.22 : 0));
 
         // 9. Quiet plains + foothill skirt fanning from the base
         const plain = (plainFBM.sample(u * 1.5 + 3, v * 1.5 + 7) * 0.5 + 0.5) * 0.03
