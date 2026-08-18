@@ -15,7 +15,9 @@
       "Shell(npx esbuild scripts/preview-mountain.ts --bundle --platform=node --format=cjs --outfile=scripts/preview-mountain.cjs)",
       "Shell(node scripts/preview-mountain.cjs C:/Users/Eitan Baron/AppData/Local/Temp)",
       "Shell(npx esbuild scripts/check-strata.ts --bundle --platform=node --format=cjs --outfile=scripts/check-strata.cjs)",
-      "Shell(node scripts/check-strata.cjs C:/Users/Eitan Baron/AppData/Local/Temp)"
+      "Shell(node scripts/check-strata.cjs C:/Users/Eitan Baron/AppData/Local/Temp)",
+      "Shell(npx esbuild scripts/preview-mv2.ts --bundle --platform=node --format=cjs --outfile=scripts/preview-mv2.cjs)",
+      "Shell(node scripts/preview-mv2.cjs C:/Users/Eitan Baron/AppData/Local/Temp)"
     ],
     "deny": [],
     "defaultMode": "default"
