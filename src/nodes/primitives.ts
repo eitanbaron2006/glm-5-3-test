@@ -155,24 +155,31 @@ export const MountainV2Node: NodeTypeDefinition = {
     // Legacy numeric p.bulky (0..1) maps onto the same three levels.
     let bulk = p.bulk ?? 'medium';
     if (typeof bulk === 'number') bulk = bulk >= 0.66 ? 'high' : bulk >= 0.33 ? 'medium' : 'low';
+    // centrality weighting (centerK) guarantees ONE dominant central summit
+    // regardless of seed: cell cones fade with distance from the massif
+    // center. The summit boost is a NARROW central spike (exp(-80 d²)) so it
+    // crowns the main peak without inflating neighbor cells into rivals.
     const bulkCfg = bulk === 'low'
-      ? { maskQ: 2.6, width: 0.85, floor: 0.14, boost: 0.05 }
+      ? { maskQ: 2.6, width: 0.85, floor: 0.14, boost: 0.08, centerK: 0.15 }
       : bulk === 'high'
-        ? { maskQ: 1.25, width: 1.5, floor: 0.5, boost: 0.24 }
-        : { maskQ: 1.9, width: 1.05, floor: 0.3, boost: 0.12 };
+        ? { maskQ: 1.25, width: 1.5, floor: 0.5, boost: 0.34, centerK: 0.45 }
+        : { maskQ: 1.6, width: 1.12, floor: 0.32, boost: 0.3, centerK: 0.3 };
 
-    // Per-style geology on the Voronoi construction: peak = per-cell cone
-    // exponent (higher = sharper summit), edge = cell-wall ridge exponent,
+    // Per-style geology on the Voronoi construction: cellLo/cellHi bound the
+    // per-cell summit heights (a NARROW range keeps ONE dominant summit —
+    // GAEA's basic mountain, not a cluster of rival peaks), peak = per-cell
+    // cone exponent (higher = sharper summit), edge = cell-wall ridge
+    // exponent (LOWER = broader walls = continuous radiating slopes),
     // edgeAmp = wall-ridge strength vs peaks, sharp = global sharpening,
     // warp = domain distortion (in cell units), oct = Voronoi octaves,
     // gully = erosion channel strength, soften = smoothing passes (Old),
     // strata = sedimentary benching amount, micro = fine ridge detail.
     const styleCfg = {
-      basic:  { peak: 2.0,  edge: 1.7,  edgeAmp: 0.6,  sharp: 1.0,  warp: 0.32, oct: 2, gully: 0,    soften: 0, strata: 0,   micro: 0.05 },
-      eroded: { peak: 2.2,  edge: 1.8,  edgeAmp: 0.62, sharp: 1.05, warp: 0.38, oct: 2, gully: 0.48, soften: 0, strata: 0,   micro: 0.1 },
-      old:    { peak: 1.3,  edge: 1.25, edgeAmp: 0.5,  sharp: 0.9,  warp: 0.5,  oct: 2, gully: 0.14, soften: 3, strata: 0,   micro: 0.02 },
-      alpine: { peak: 3.0,  edge: 2.4,  edgeAmp: 0.72, sharp: 1.25, warp: 0.3,  oct: 3, gully: 0.16, soften: 0, strata: 0,   micro: 0.22 },
-      strata: { peak: 2.0,  edge: 1.7,  edgeAmp: 0.6,  sharp: 1.0,  warp: 0.34, oct: 2, gully: 0.1,  soften: 0, strata: 0.8, micro: 0.06 },
+      basic:  { cellLo: 0.5, cellHi: 0.75, peak: 2.0,  edge: 1.6,  edgeAmp: 0.66, sharp: 1.0,  warp: 0.36, oct: 2, gully: 0,    soften: 0, strata: 0,   micro: 0.07 },
+      eroded: { cellLo: 0.55, cellHi: 0.8, peak: 2.2, edge: 1.8,  edgeAmp: 0.62, sharp: 1.05, warp: 0.38, oct: 2, gully: 0.48, soften: 0, strata: 0,   micro: 0.1 },
+      old:    { cellLo: 0.6, cellHi: 0.85,  peak: 1.3,  edge: 1.25, edgeAmp: 0.5,  sharp: 0.9,  warp: 0.5,  oct: 2, gully: 0.14, soften: 3, strata: 0,   micro: 0.02 },
+      alpine: { cellLo: 0.5, cellHi: 0.95,  peak: 3.0,  edge: 2.4,  edgeAmp: 0.72, sharp: 1.25, warp: 0.3,  oct: 3, gully: 0.16, soften: 0, strata: 0,   micro: 0.22 },
+      strata: { cellLo: 0.5, cellHi: 0.7,   peak: 2.0,  edge: 1.7,  edgeAmp: 0.6,  sharp: 1.0,  warp: 0.34, oct: 2, gully: 0.1,  soften: 0, strata: 0.8, micro: 0.06 },
     }[style];
 
     const octaves = reduce ? 1 : styleCfg.oct;
@@ -217,13 +224,16 @@ export const MountainV2Node: NodeTypeDefinition = {
 
         // 3. Modulated Voronoi ridge field — the documented construction.
         //    Each octave takes max(per-cell cone peak, cell-wall ridge).
-        //    Summit height is modulated per cell by its hash (every peak a
-        //    different height), and later octaves only fill in the lows,
-        //    so minor ridges bud off the major structure (fractal massing).
+        //    Summit height is modulated per cell by its hash AND faded by
+        //    centrality (bulkCfg.centerK) so the central summit always
+        //    dominates; later octaves only fill in the lows, so minor
+        //    ridges bud off the major structure (fractal massing).
+        const centrality = 1 - bulkCfg.centerK * Math.min(d, 1);
         let t = 0, f = freq, amp = 1;
         for (let o = 0; o < octaves; o++) {
           const vf = voroField(su * f, sv * f, seed + o * 101);
-          const cellH = 0.62 + 0.38 * ((vf.hash >>> 16) & 0xff) / 255;
+          const cellH = (styleCfg.cellLo
+            + (styleCfg.cellHi - styleCfg.cellLo) * ((vf.hash >>> 16) & 0xff) / 255) * centrality;
           const peak = Math.pow(Math.max(0, 1 - vf.f1), styleCfg.peak) * cellH;
           const edge = Math.pow(Math.max(0, 1 - Math.min(vf.f2 - vf.f1, 1)), styleCfg.edge)
             * styleCfg.edgeAmp;
@@ -242,9 +252,9 @@ export const MountainV2Node: NodeTypeDefinition = {
         mountain *= 1 + detail * styleCfg.micro * (micro - 0.5);
 
         // 5. Massing: valleys ride at the bulk floor, ridges carve above
-        //    it; a small summit boost keeps ONE dominant central peak.
+        //    it; the narrow central spike crowns ONE dominant summit.
         let core = mask * (bulkCfg.floor + (1 - bulkCfg.floor) * mountain);
-        core += Math.exp(-d * d * 22) * bulkCfg.boost;
+        core += Math.exp(-d * d * 80) * bulkCfg.boost;
 
         // 6. Erosion gullies: ridged channels cut into the flanks (Eroded)
         if (styleCfg.gully > 0) {
