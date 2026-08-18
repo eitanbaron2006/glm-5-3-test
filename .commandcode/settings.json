@@ -11,7 +11,11 @@
       "Shell(npx esbuild scripts/preview-volcano.ts --bundle --platform=node --format=cjs --outfile=scripts/preview-volcano.cjs)",
       "Shell(node scripts/preview-volcano.cjs C:/Users/EITANB~1/AppData/Local/Temp/commandcode/C--Users-Eitan-Baron-Desktop-glm-5-3-test/307a3a15-a22a-4f65-9e82-b09d50c781ef/scratchpad)",
       "Shell(node scripts/preview-volcano.cjs \"C:/Users/Eitan Baron/AppData/Local/Temp\")",
-      "Shell(node scripts/preview-volcano.cjs C:/Users/Eitan Baron/AppData/Local/Temp)"
+      "Shell(node scripts/preview-volcano.cjs C:/Users/Eitan Baron/AppData/Local/Temp)",
+      "Shell(npx esbuild scripts/preview-mountain.ts --bundle --platform=node --format=cjs --outfile=scripts/preview-mountain.cjs)",
+      "Shell(node scripts/preview-mountain.cjs C:/Users/Eitan Baron/AppData/Local/Temp)",
+      "Shell(npx esbuild scripts/check-strata.ts --bundle --platform=node --format=cjs --outfile=scripts/check-strata.cjs)",
+      "Shell(node scripts/check-strata.cjs C:/Users/Eitan Baron/AppData/Local/Temp)"
     ],
     "deny": [],
     "defaultMode": "default"

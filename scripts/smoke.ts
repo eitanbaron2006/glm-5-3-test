@@ -77,8 +77,8 @@ for (let i = 0; i < PRESETS.length; i++) {
     if (!ok) failed = true;
   }
 
-  // Check all 5 GAEA mountain styles explicitly
-  const styles = ['alpine', 'massif', 'spined', 'stratified', 'craggy'];
+  // Check all 4 original mountain styles explicitly
+  const styles = ['alpine', 'massif', 'spined', 'craggy'];
   for (const st of styles) {
     const g = new Graph();
     const engine = new GraphEngine(g);
@@ -98,6 +98,30 @@ for (let i = 0; i < PRESETS.length; i++) {
     const mn = h.min(), mx = h.max();
     const ok = nan === 0 && mn >= -1e-6 && mx <= 1 + 1e-6 && mx > mn;
     console.log(`${ok ? 'OK  ' : 'FAIL'} mountain style: ${st.padEnd(12)} ${stats(h)}${nan ? ` NaN=${nan}` : ''}`);
+    if (!ok) failed = true;
+  }
+
+  // Check all 5 GAEA mountain V2 styles explicitly
+  const v2Styles = ['basic', 'eroded', 'old', 'alpine', 'strata'];
+  for (const st of v2Styles) {
+    const g = new Graph();
+    const engine = new GraphEngine(g);
+    const node = engine.createNode('mountainV2', 0, 0);
+    node.params.style = st;
+    const out = engine.createNode('output', 200, 0);
+    engine.connect(node.id, 'out', out.id, 'in');
+    const results = engine.evaluate(size);
+    const h = results.get(out.id);
+    if (!h) {
+      console.error(`FAIL mountainV2 style ${st}: no output`);
+      failed = true;
+      continue;
+    }
+    let nan = 0;
+    for (let i = 0; i < h.data.length; i++) if (!isFinite(h.data[i])) nan++;
+    const mn = h.min(), mx = h.max();
+    const ok = nan === 0 && mn >= -1e-6 && mx <= 1 + 1e-6 && mx > mn;
+    console.log(`${ok ? 'OK  ' : 'FAIL'} mountainV2 style: ${st.padEnd(12)} ${stats(h)}${nan ? ` NaN=${nan}` : ''}`);
     if (!ok) failed = true;
   }
 }

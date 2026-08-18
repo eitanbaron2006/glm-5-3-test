@@ -9,7 +9,7 @@ import { WindErosionNode } from './erosion-wind';
 import { BlendNode, DisplaceNode } from './combine';
 import { SelectRangeNode, OutputNode } from './select';
 import {
-  MountainNode, IslandNode, RidgeNode, PeaksNode,
+  MountainNode, MountainV2Node, IslandNode, RidgeNode, PeaksNode,
   CraterNode, CanyonNode, DunesNode, VolcanoNode, MesaNode
 } from './primitives';
 import { SetMapNode } from './materials';
@@ -18,6 +18,7 @@ import { SmartColorNode } from './smartcolor';
 export const NODE_TYPES: NodeTypeDefinition[] = [
   // Primitives
   MountainNode,
+  MountainV2Node,
   IslandNode,
   RidgeNode,
   PeaksNode,

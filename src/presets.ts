@@ -43,12 +43,10 @@ export const PRESETS: PresetSpec[] = [
     name: '01 · Mountain',
     nodes: [
       {
-        key: 'mountain', type: 'mountain', x: 30, y: 60,
+        key: 'mountain', type: 'mountainV2', x: 30, y: 60,
         params: {
-          style: 'alpine', seed: 2025, height: 1, x: 0.5, y: 0.52, radius: 0.4,
-          steepness: 2.2, bulky: 0.45, elong: 0.3, angle: 55, irregular: 0.38,
-          spurs: 0.65, spursFreq: 6, gullies: 0.5,
-          foothills: 0.8, benches: 0.45, strataFreq: 8, roughness: 0.22, roughScale: 6
+          style: 'alpine', seed: 2025, height: 1, x: 0.5, y: 0.52,
+          scale: 0.44, bulk: 'medium', reduceDetails: false
         }
       },
       {
@@ -563,11 +561,10 @@ export const PRESETS: PresetSpec[] = [
         }
       },
       {
-        key: 'mountain', type: 'mountain', x: 30, y: 330,
+        key: 'mountain', type: 'mountainV2', x: 30, y: 330,
         params: {
-          seed: 77, height: 1, x: 0.48, y: 0.5, radius: 0.3,
-          steepness: 2.6, elong: 0.3, angle: 40, irregular: 0.42,
-          foothills: 0.6, benches: 0.45, roughness: 0.24, roughScale: 5
+          style: 'eroded', seed: 77, height: 1, x: 0.48, y: 0.5,
+          scale: 0.36, bulk: 'high', reduceDetails: false
         }
       },
       {
@@ -662,12 +659,10 @@ export const PRESETS: PresetSpec[] = [
     name: '14 · SetMap Materials',
     nodes: [
       {
-        key: 'mountain', type: 'mountain', x: 30, y: 60,
+        key: 'mountain', type: 'mountainV2', x: 30, y: 60,
         params: {
-          style: 'massif', seed: 2025, height: 1, x: 0.5, y: 0.52, radius: 0.42,
-          steepness: 2.2, bulky: 0.6, elong: 0.25, angle: 55, irregular: 0.38,
-          spurs: 0.55, spursFreq: 6, gullies: 0.45,
-          foothills: 0.8, benches: 0.5, strataFreq: 8, roughness: 0.2, roughScale: 6
+          style: 'basic', seed: 2025, height: 1, x: 0.5, y: 0.52,
+          scale: 0.46, bulk: 'high', reduceDetails: false
         }
       },
       {
@@ -718,12 +713,10 @@ export const PRESETS: PresetSpec[] = [
     name: '15 · Smart Color',
     nodes: [
       {
-        key: 'mountain', type: 'mountain', x: 30, y: 60,
+        key: 'mountain', type: 'mountainV2', x: 30, y: 60,
         params: {
-          style: 'alpine', seed: 2025, height: 1, x: 0.5, y: 0.52, radius: 0.42,
-          steepness: 2.5, bulky: 0.45, elong: 0.3, angle: 55, irregular: 0.4,
-          spurs: 0.7, spursFreq: 6, gullies: 0.55,
-          foothills: 0.85, benches: 0.5, strataFreq: 8, roughness: 0.22, roughScale: 6
+          style: 'alpine', seed: 2025, height: 1, x: 0.5, y: 0.52,
+          scale: 0.46, bulk: 'medium', reduceDetails: false
         }
       },
       {
