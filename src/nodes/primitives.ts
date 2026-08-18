@@ -414,6 +414,14 @@ export const DunesNode: NodeTypeDefinition = {
   }
 };
 
+/** Volcano GeoPrimitive — faithful to QuadSpinner GAEA:
+    implements GAEA's Volcano parameter set (Scale, Height, Mouth, Bulk,
+    Surface, X, Y, Seed) as a stratovolcanic landform — broad concave
+    flanks rising to a deep crater with steep inner walls, an uneven floor
+    and a raised rim. Surface: Eroded carves polar-space ridged drainage
+    (radial gullies between knife-edge ridges) plus fine flank texture;
+    Surface: Smooth yields the clean construction cone. A seam-free
+    periodic footprint noise breaks the circle into natural irregularity. */
 export const VolcanoNode: NodeTypeDefinition = {
   type: 'volcano',
   title: 'Volcano',
@@ -422,29 +430,101 @@ export const VolcanoNode: NodeTypeDefinition = {
   inputs: [],
   outputs: [{ id: 'out', label: 'Out' }],
   params: [
+    {
+      id: 'surface',
+      label: 'Surface',
+      type: 'select',
+      default: 'eroded',
+      options: [
+        { value: 'smooth', label: 'Smooth' },
+        { value: 'eroded', label: 'Eroded' },
+      ],
+    },
     { id: 'seed', label: 'Seed', type: 'seed', default: 5 },
+    { id: 'scale', label: 'Scale', type: 'slider', min: 0.15, max: 0.6, step: 0.01, default: 0.42 },
     { id: 'height', label: 'Height', type: 'slider', min: 0, max: 2, step: 0.01, default: 1 },
+    { id: 'mouth', label: 'Mouth', type: 'slider', min: 0.1, max: 0.8, step: 0.01, default: 0.34 },
+    { id: 'bulk', label: 'Bulk', type: 'slider', min: 0, max: 1, step: 0.02, default: 0.5 },
     { id: 'x', label: 'Center X', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
     { id: 'y', label: 'Center Y', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
-    { id: 'radius', label: 'Radius', type: 'slider', min: 0.1, max: 0.5, step: 0.01, default: 0.36 },
-    { id: 'slope', label: 'Slope', type: 'slider', min: 0.6, max: 3, step: 0.05, default: 1.4 },
-    { id: 'calderaWidth', label: 'Caldera Width', type: 'slider', min: 0.05, max: 0.5, step: 0.01, default: 0.2 },
-    { id: 'calderaDepth', label: 'Caldera Depth', type: 'slider', min: 0, max: 1, step: 0.01, default: 0.5 },
-    { id: 'roughness', label: 'Roughness', type: 'slider', min: 0, max: 0.6, step: 0.01, default: 0.3 },
   ],
   compute(_inputs, p, ctx) {
     const s = makeSize(ctx.size);
     const h = new Heightmap(s);
-    const fbm = new FBM(p.seed, 5, 2, 0.5, 'ridged');
+
+    const surface = (p.surface ?? 'eroded') as 'smooth' | 'eroded';
+    const seed = p.seed ?? 5;
+    const heightMult = p.height ?? 1;
+    const cx = p.x ?? 0.5;
+    const cy = p.y ?? 0.5;
+    const scale = Math.max(0.1, p.scale ?? p.radius ?? 0.42);
+    const mouth = Math.min(0.85, p.mouth ?? p.calderaWidth ?? 0.34);
+    const bulk = p.bulk ?? 0.5;
+
+    // Multi-frequency GAEA noise engines
+    const shapeFBM = new FBM(seed + 13, 4, 2.0, 0.5, 'perlin');  // footprint irregularity
+    const gullyFBM = new FBM(seed + 41, 5, 2.0, 0.5, 'ridged');  // radial drainage
+    const regionFBM = new FBM(seed + 61, 3, 2.0, 0.5, 'perlin'); // regional gully strength
+    const flankFBM = new FBM(seed + 89, 5, 2.1, 0.5, 'ridged');  // fine flank texture
+    const floorFBM = new FBM(seed + 137, 3, 2.0, 0.5, 'perlin'); // crater floor relief
+    const plainFBM = new FBM(seed + 173, 3, 2.0, 0.5, 'perlin'); // surrounding plain
+
+    // Surface mode: Eroded carries GAEA's weathered drainage; Smooth is clean.
+    const gullyAmp = surface === 'eroded' ? 0.24 : 0.04;
+    const flankAmp = surface === 'eroded' ? 0.14 : 0.03;
+
+    // Bulk shapes the profile exponent: low = sharp concave stratovolcano
+    // (steep summit, gentle base apron), high = massive full-bodied shield.
+    const q = 2.5 - 1.15 * bulk;
+
     for (let y = 0; y < s; y++) {
       for (let x = 0; x < s; x++) {
-        const u = x / (s - 1), v = y / (s - 1);
-        const dx = u - p.x, dy = v - p.y;
-        const d = Math.sqrt(dx * dx + dy * dy) / p.radius;
-        const cone = Math.pow(Math.max(0, 1 - d), p.slope);
-        const caldera = Math.exp(-Math.pow(d / p.calderaWidth, 2)) * p.calderaDepth;
-        const flank = fbm.sample(u * 8, v * 8) * cone * p.roughness;
-        h.set(x, y, Math.min(Math.max(cone - caldera + flank, 0), 1));
+        const u = x / (s - 1);
+        const v = y / (s - 1);
+        const dx = u - cx;
+        const dy = v - cy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx);
+
+        // 1. Irregular footprint: periodic noise on the unit circle (seam-free)
+        const shapeN = shapeFBM.sample(Math.cos(angle) * 1.6 + 5, Math.sin(angle) * 1.6 + 5);
+        const d = dist / (scale * (1 + 0.25 * shapeN));
+
+        // 2. Radial drainage: ridged FBM sampled on the unit ring (exactly
+        //    periodic in angle -> seam-free starburst of ridges); a constant
+        //    diagonal drift with d makes channels meander sideways as they
+        //    run downslope without rotating into spirals. A low-frequency XY
+        //    mask varies gully strength by region so faces erode unevenly.
+        const g = gullyFBM.sample(Math.cos(angle) * 2.2 + d * 0.28 + 9,
+                                  Math.sin(angle) * 2.2 + d * 0.28 + 9);
+        const region = regionFBM.sample(u * 2.4 + 31, v * 2.4 + 17) * 0.5 + 0.5;
+        const dMod = d * (1 + gullyAmp * (g - 0.5) * (0.35 + 0.65 * region));
+
+        // 3. Stratovolcanic profile on the displaced radius
+        let cone = Math.pow(Math.max(0, 1 - dMod), q);
+
+        // 4. Fine flank texture (XY-space ridged detail)
+        const flank = flankFBM.sample(u * 7 + 11, v * 7 + 23);
+        cone += (flank - 0.5) * 2 * flankAmp * cone;
+
+        // 5. Crater: blend the cone down to a deep uneven floor across a
+        //    narrow wall band (steep inner walls), then raise a crisp rim
+        //    ring above the crest. Carved on undisplaced d so the rim reads
+        //    as one structure across the gully field.
+        const rimH = Math.pow(Math.max(0, 1 - mouth), q);       // flank height at the rim
+        const wallIn = mouth * 0.62;                             // wall spans (wallIn, mouth)
+        const bowl = 1 - ss((d - wallIn) / (mouth - wallIn));
+        const floorN = floorFBM.sample(u * 5 + 3, v * 5 + 9) * 0.5 + 0.5;
+        const floorLevel = rimH * (0.22 + 0.12 * floorN);        // deep, uneven floor
+        cone = lerp(cone, floorLevel, bowl);
+        const rim = Math.exp(-Math.pow((d - mouth) / (mouth * 0.26 + 0.012), 2));
+        cone += rim * rimH * 0.35;                               // rim raise above the crest
+
+        // 6. Quiet surrounding plain with subtle undulations + soft debris skirt
+        const plain = (plainFBM.sample(u * 1.6 + 7, v * 1.6 + 13) * 0.5 + 0.5) * 0.03
+          + Math.exp(-Math.max(0, d - 1) * 1.4) * 0.03;
+
+        h.set(x, y, Math.max(0, plain + cone * heightMult));
       }
     }
     return h.normalize();

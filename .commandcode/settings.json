@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Shell(curl -sL -o /volcano_vd.png https://docs.gaea.app/.data/assets/Volcano_VD.png)",
+      "Shell(curl -sL -o /volcano_node.png https://docs.gaea.app/assets/img/Gaea-Icon-64.png)",
+      "Shell(curl -sL -o C:/Users/EITANB~1/AppData/Local/Temp/commandcode/C--Users-Eitan-Baron-Desktop-glm-5-3-test/307a3a15-a22a-4f65-9e82-b09d50c781ef/scratchpad/volcano_vd.png https://docs.gaea.app/.data/assets/Volcano_VD.png)",
+      "Shell(dir:*)",
+      "powershell",
+      "Shell(npx tsc --noEmit)",
+      "Shell(npm:*)",
+      "Shell(npx esbuild scripts/preview-volcano.ts --bundle --platform=node --format=cjs --outfile=scripts/preview-volcano.cjs)",
+      "Shell(node scripts/preview-volcano.cjs C:/Users/EITANB~1/AppData/Local/Temp/commandcode/C--Users-Eitan-Baron-Desktop-glm-5-3-test/307a3a15-a22a-4f65-9e82-b09d50c781ef/scratchpad)",
+      "Shell(node scripts/preview-volcano.cjs \"C:/Users/Eitan Baron/AppData/Local/Temp\")",
+      "Shell(node scripts/preview-volcano.cjs C:/Users/Eitan Baron/AppData/Local/Temp)"
+    ],
+    "deny": [],
+    "defaultMode": "default"
+  }
+}

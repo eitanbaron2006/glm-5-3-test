@@ -88,8 +88,8 @@ export const PRESETS: PresetSpec[] = [
       {
         key: 'volcano', type: 'volcano', x: 30, y: 330,
         params: {
-          seed: 5, height: 1, x: 0.52, y: 0.48, radius: 0.3, slope: 1.6,
-          calderaWidth: 0.16, calderaDepth: 0.65, roughness: 0.35
+          seed: 5, height: 1, x: 0.52, y: 0.48, scale: 0.3,
+          mouth: 0.3, bulk: 0.55, surface: 'eroded'
         }
       },
       {
