@@ -27,11 +27,59 @@ const terrace = (t: number, steps: number, soft: number) => {
   return (k + ss((f - lo) / (hi - lo))) * q;
 };
 
+/** Rich Voronoi field sample: F1/F2 distances (in cell units, where one
+    grid cell spans 1.0) plus the winning cell's hash — the hash drives
+    per-cell height modulation ("modulated Voronoi pattern"). */
+const voroField = (u: number, v: number, seed: number) => {
+  const gx = Math.floor(u), gy = Math.floor(v);
+  let f1 = Infinity, f2 = Infinity, hash = 0;
+  for (let oy = -1; oy <= 1; oy++) {
+    for (let ox = -1; ox <= 1; ox++) {
+      const cx = gx + ox, cy = gy + oy;
+      const hs = (cx * 374761393 + cy * 668265263 + seed * 2246822519) >>> 0;
+      const jx = ((hs & 0xffff) / 65535) * 0.8 + 0.1;
+      const jy = (((hs >>> 8) & 0xffff) / 65535) * 0.8 + 0.1;
+      const ddx = cx + jx - u, ddy = cy + jy - v;
+      const d = Math.sqrt(ddx * ddx + ddy * ddy);
+      if (d < f1) { f2 = f1; f1 = d; hash = hs; }
+      else if (d < f2) { f2 = d; }
+    }
+  }
+  return { f1: Math.min(f1, 1), f2: Math.min(f2, 1.6), hash };
+};
+
+/** Center-weighted 3x3 box smoothing (Old-mountain softening). */
+const blurHeightmap = (h: Heightmap, passes: number) => {
+  const s = h.size;
+  for (let p = 0; p < passes; p++) {
+    const src = Float32Array.from(h.data);
+    for (let y = 0; y < s; y++) {
+      for (let x = 0; x < s; x++) {
+        let sum = 0, n = 0;
+        for (let oy = -1; oy <= 1; oy++) {
+          for (let ox = -1; ox <= 1; ox++) {
+            const xx = x + ox, yy = y + oy;
+            if (xx < 0 || yy < 0 || xx >= s || yy >= s) continue;
+            const w = (ox === 0 ? 2 : 1) * (oy === 0 ? 2 : 1);
+            sum += src[yy * s + xx] * w;
+            n += w;
+          }
+        }
+        h.data[y * s + x] = sum / n;
+      }
+    }
+  }
+  return h;
+};
+
 /** Mountain V2 GeoPrimitive — faithful to QuadSpinner GAEA:
     implements GAEA's Mountain parameter set (Scale, Height, Style, Bulk,
-    Reduce Details, Seed, X, Y) exactly as documented — a modulated Voronoi
-    pattern with distortions forming a single central massif: a dominant
-    summit with dendritic branching ridges, sharp crests over smooth
+    Reduce Details, Seed, X, Y) exactly as documented, and follows the
+    node's documented construction — "a modulated Voronoi pattern and
+    distortions" (docs.gaea.app — Mountain): per-cell Voronoi cones with
+    hash-modulated summit heights, joined by cell-wall ridgelines into a
+    single central massif, bent organic by tectonic domain warp — a
+    dominant summit, several secondary peaks, sharp crests over low
     valleys, a foothill skirt fanning into quiet plains.
 
     Behavior follows the real node, verified against the official docs
@@ -100,48 +148,49 @@ export const MountainV2Node: NodeTypeDefinition = {
     const scale = Math.max(0.1, p.scale ?? p.radius ?? 0.42);
     const reduce = p.reduceDetails ?? false;
 
-    // Bulk: Low = slender/delicate, Medium = balanced, High = thick/heavy.
+    // Bulk: Low = slender/delicate, Medium = balanced, High = thick/heavy
+    // ("substantial volume and broad bases"). maskQ shapes the footprint
+    // falloff (higher = more slender), width the base breadth, floor the
+    // valley floor inside the massif, boost the dominant summit's mass.
     // Legacy numeric p.bulky (0..1) maps onto the same three levels.
     let bulk = p.bulk ?? 'medium';
     if (typeof bulk === 'number') bulk = bulk >= 0.66 ? 'high' : bulk >= 0.33 ? 'medium' : 'low';
     const bulkCfg = bulk === 'low'
-      ? { q: 2.6, floor: 0.18, width: 0.88 }
+      ? { maskQ: 2.6, width: 0.85, floor: 0.14, boost: 0.05 }
       : bulk === 'high'
-        ? { q: 1.1, floor: 0.6, width: 1.55 }
-        : { q: 2.05, floor: 0.32, width: 1.0 };
+        ? { maskQ: 1.25, width: 1.5, floor: 0.5, boost: 0.24 }
+        : { maskQ: 1.9, width: 1.05, floor: 0.3, boost: 0.12 };
 
-    // Per-style geology: ridge band steepness (kept LOW so ridge bodies stay
-    // wide — higher exponents collapse ridges into hairline cracks), crest-
-    // line emphasis (knife edge layered on the wide body), ridge dominance,
-    // erosion gullies, softening toward dome, strata amount, fine flank
-    // detail, valley floor depth, high-frequency micro-ridge amplitude.
+    // Per-style geology on the Voronoi construction: peak = per-cell cone
+    // exponent (higher = sharper summit), edge = cell-wall ridge exponent,
+    // edgeAmp = wall-ridge strength vs peaks, sharp = global sharpening,
+    // warp = domain distortion (in cell units), oct = Voronoi octaves,
+    // gully = erosion channel strength, soften = smoothing passes (Old),
+    // strata = sedimentary benching amount, micro = fine ridge detail.
     const styleCfg = {
-      basic:   { sharp: 1.3,  line: 0.12, ridge: 0.58, gully: 0.06, soften: 0.1,  strata: 0,   flank: 0.07, floor: 1.0,  micro: 0.05 },
-      eroded:  { sharp: 1.5,  line: 0.22, ridge: 0.62, gully: 0.3,  soften: 0.16, strata: 0,   flank: 0.14, floor: 1.0,  micro: 0.1 },
-      old:     { sharp: 1.0,  line: 0,    ridge: 0.45, gully: 0.18, soften: 0.48, strata: 0,   flank: 0.08, floor: 1.15, micro: 0.04 },
-      alpine:  { sharp: 1.7,  line: 0.45, ridge: 0.7,  gully: 0.2,  soften: 0,    strata: 0,   flank: 0.22, floor: 0.55, micro: 0.25 },
-      strata:  { sharp: 1.4,  line: 0.15, ridge: 0.58, gully: 0.18, soften: 0.1,  strata: 0.85, flank: 0.12, floor: 1.0,  micro: 0.08 },
+      basic:  { peak: 2.0,  edge: 1.7,  edgeAmp: 0.6,  sharp: 1.0,  warp: 0.32, oct: 2, gully: 0,    soften: 0, strata: 0,   micro: 0.05 },
+      eroded: { peak: 2.2,  edge: 1.8,  edgeAmp: 0.62, sharp: 1.05, warp: 0.38, oct: 2, gully: 0.48, soften: 0, strata: 0,   micro: 0.1 },
+      old:    { peak: 1.3,  edge: 1.25, edgeAmp: 0.5,  sharp: 0.9,  warp: 0.5,  oct: 2, gully: 0.14, soften: 3, strata: 0,   micro: 0.02 },
+      alpine: { peak: 3.0,  edge: 2.4,  edgeAmp: 0.72, sharp: 1.25, warp: 0.3,  oct: 3, gully: 0.16, soften: 0, strata: 0,   micro: 0.22 },
+      strata: { peak: 2.0,  edge: 1.7,  edgeAmp: 0.6,  sharp: 1.0,  warp: 0.34, oct: 2, gully: 0.1,  soften: 0, strata: 0.8, micro: 0.06 },
     }[style];
 
+    const octaves = reduce ? 1 : styleCfg.oct;
     const detail = reduce ? 0.35 : 1;
 
-    // Multi-frequency GAEA noise engines
-    const warp1 = new FBM(seed + 11, 4, 2.0, 0.5, 'perlin');   // distortion field X
-    const warp2 = new FBM(seed + 29, 4, 2.0, 0.5, 'perlin');   // distortion field Y
-    const shapeFBM = new FBM(seed + 53, 3, 2.0, 0.5, 'perlin');// footprint irregularity
-    const spineFBM = new FBM(seed + 71, 7, 2.0, 0.5, 'ridged');// dendritic ridge network
-    const gullyFBM = new FBM(seed + 83, 5, 2.0, 0.5, 'ridged'); // erosion channels
-    const flankFBM = new FBM(seed + 103, 5, 2.1, 0.5, 'ridged');// fine flank texture
-    const microFBM = new FBM(seed + 131, 4, 2.2, 0.5, 'ridged');// high-freq micro-ridges
+    // Distortion + modulation engines
+    const warpX = new FBM(seed + 11, 3, 2.0, 0.5, 'perlin');    // domain distortion X
+    const warpY = new FBM(seed + 29, 3, 2.0, 0.5, 'perlin');    // domain distortion Y
+    const shapeFBM = new FBM(seed + 53, 3, 2.0, 0.5, 'perlin'); // footprint irregularity
+    const massFBM = new FBM(seed + 71, 3, 2.0, 0.5, 'perlin');  // large-scale height modulation
+    const gullyFBM = new FBM(seed + 83, 5, 2.05, 0.5, 'ridged');// erosion channels
+    const microFBM = new FBM(seed + 131, 4, 2.2, 0.5, 'ridged');// fine micro-ridges
     const plainFBM = new FBM(seed + 199, 3, 2.0, 0.5, 'perlin');// surrounding plain
 
-    // Ridge network frequency tracks Scale: ~8 major wavelengths across the
-    // massif; the ridged multifractal's per-octave weighting makes crests
-    // converge toward dominant summits (dendritic branching). A coarse
-    // Voronoi grid (few cells across the landform) supplies per-region
-    // weathering modulation only.
-    const spineFreq = 3.6 / scale;
-    const vcellFreq = Math.min(12, 3.2 / scale);
+    // Cell frequency: ~2-3 Voronoi cells across the massif core, so the
+    // landform reads as ONE mountain with several summits, not a range.
+    const freq = 2.3 / scale;
+    const warpUV = styleCfg.warp / freq; // distortion measured in cell units
 
     for (let y = 0; y < s; y++) {
       for (let x = 0; x < s; x++) {
@@ -151,70 +200,74 @@ export const MountainV2Node: NodeTypeDefinition = {
         const dy = v - cy;
         const angle = Math.atan2(dy, dx);
 
-        // 1. Distortions: continuous tectonic domain warp bends both the
-        //    massif footprint and the Voronoi ridge network below it.
-        const wx = warp1.sample(u * 2.5 + 5, v * 2.5 + 7) * 0.16;
-        const wy = warp2.sample(u * 2.5 + 13, v * 2.5 + 17) * 0.16;
+        // 1. Distortions: continuous tectonic domain warp. Applied BEFORE
+        //    the Voronoi field, it bends cell walls and ridge lines into
+        //    organic curved arêtes instead of straight polygon seams.
+        const wx = warpX.sample(u * 2.6 + 5, v * 2.6 + 7) * warpUV;
+        const wy = warpY.sample(u * 2.6 + 13, v * 2.6 + 17) * warpUV;
+        const su = u + wx, sv = v + wy;
 
-        // 2. Massif footprint: radial falloff with a seam-free periodic
+        // 2. Massif footprint: warped radial falloff with seam-free
         //    boundary irregularity; bulk sets width + profile exponent.
-        //    Strata quantizes the envelope into benches — sedimentary
-        //    layers that follow the massif's contours structurally.
         const shapeN = shapeFBM.sample(Math.cos(angle) * 1.4 + 5, Math.sin(angle) * 1.4 + 5);
-        const d = Math.sqrt((dx + wx) * (dx + wx) + (dy + wy) * (dy + wy))
-          / (scale * bulkCfg.width * (1 + 0.2 * shapeN));
-        const env = Math.pow(Math.max(0, 1 - d), bulkCfg.q);
-        const base = styleCfg.strata > 0
-          ? lerp(env, terrace(Math.min(env, 0.999999), 9, 0.22), styleCfg.strata)
-          : env;
+        const mx = dx + wx * 0.5, my = dy + wy * 0.5;
+        const d = Math.sqrt(mx * mx + my * my)
+          / (scale * bulkCfg.width * (1 + 0.22 * shapeN));
+        const mask = Math.pow(Math.max(0, 1 - d), bulkCfg.maskQ);
 
-        // 3. Ridged multifractal spine (Musgrave): per-octave spectral
-        //    weighting makes minor ridges bud off major ones — the
-        //    dendritic branching converging on dominant summits that
-        //    GAEA's reference shows. Sampled through the tectonic warp so
-        //    crests bend into curved arêtes; the crest-line boost layers
-        //    the knife edge. The modulated Voronoi pass contributes NO
-        //    height structure — its cellular hash scales erosion/detail
-        //    strength per region (heterogeneous weathering).
-        const spine = spineFBM.sample((u + wx * 0.55) * spineFreq,
-                                      (v + wy * 0.55) * spineFreq);
-        const body = Math.pow(Math.max(0, spine), styleCfg.sharp);
-        const cell = voronoi(u + wx * 0.9, v + wy * 0.9, vcellFreq, seed, 'cellular');
-        const cellMod = 0.6 + 0.4 * cell;
-        const crest = body * (1 - styleCfg.line) + styleCfg.line * Math.pow(body, 4);
+        // 3. Modulated Voronoi ridge field — the documented construction.
+        //    Each octave takes max(per-cell cone peak, cell-wall ridge).
+        //    Summit height is modulated per cell by its hash (every peak a
+        //    different height), and later octaves only fill in the lows,
+        //    so minor ridges bud off the major structure (fractal massing).
+        let t = 0, f = freq, amp = 1;
+        for (let o = 0; o < octaves; o++) {
+          const vf = voroField(su * f, sv * f, seed + o * 101);
+          const cellH = 0.62 + 0.38 * ((vf.hash >>> 16) & 0xff) / 255;
+          const peak = Math.pow(Math.max(0, 1 - vf.f1), styleCfg.peak) * cellH;
+          const edge = Math.pow(Math.max(0, 1 - Math.min(vf.f2 - vf.f1, 1)), styleCfg.edge)
+            * styleCfg.edgeAmp;
+          const o1 = Math.max(peak, edge);
+          t = o === 0 ? o1 : t + amp * o1 * Math.max(0, 1 - Math.min(t, 1));
+          amp *= 0.42;
+          f *= 2.15;
+        }
 
-        // 4. Massing: valleys ride at the bulk floor, crests carve above it;
-        //    style lowers the floor for dramatic relief (alpine) or raises
-        //    it for rounded old mountains.
-        const valFloor = bulkCfg.floor * styleCfg.floor;
-        let core = base * (valFloor * (1 - styleCfg.ridge) + styleCfg.ridge * crest);
+        // 4. Global sharpening + large-scale modulation (the "modulated"
+        //    part: whole ridge complexes rise and fall across the massif)
+        //    + fine micro-ridge detail on the flanks
+        let mountain = Math.pow(Math.min(Math.max(t, 0), 1), styleCfg.sharp);
+        mountain *= 0.8 + 0.4 * (massFBM.sample(u * 1.8 + 31, v * 1.8 + 17) * 0.5 + 0.5);
+        const micro = microFBM.sample(u * 14 + 60, v * 14 + 60);
+        mountain *= 1 + detail * styleCfg.micro * (micro - 0.5);
 
-        // 5. Erosion gullies: ridged channels cut into the flanks, masked by
-        //    the mass so the plains stay quiet; the Voronoi cell hash scales
-        //    weathering per region
-        const g = gullyFBM.sample(u * 7 + 20, v * 7 + 20);
-        core *= 1 - styleCfg.gully * detail * cellMod * 0.55 * Math.pow(1 - g, 1.6) * core;
+        // 5. Massing: valleys ride at the bulk floor, ridges carve above
+        //    it; a small summit boost keeps ONE dominant central peak.
+        let core = mask * (bulkCfg.floor + (1 - bulkCfg.floor) * mountain);
+        core += Math.exp(-d * d * 22) * bulkCfg.boost;
 
-        // 6. Fine flank texture + high-frequency micro-ridges (young rock),
-        //    likewise scaled per weathering region
-        const flank = flankFBM.sample(u * 9 + 40, v * 9 + 40);
-        const micro = microFBM.sample(u * 16 + 60, v * 16 + 60);
-        core *= 1 + detail * cellMod * (styleCfg.flank * (flank - 0.5) + styleCfg.micro * (micro - 0.5));
+        // 6. Erosion gullies: ridged channels cut into the flanks (Eroded)
+        if (styleCfg.gully > 0) {
+          const g = gullyFBM.sample(u * 6.5 + 20, v * 6.5 + 20);
+          core *= 1 - detail * styleCfg.gully * Math.pow(1 - g, 1.7) * Math.min(core, 1);
+        }
 
-        // 7. Old mountains round back toward the smooth dome
-        core = lerp(core, base * 0.85, styleCfg.soften);
+        // 7. Strata: quantize into sedimentary benches following the form
+        if (styleCfg.strata > 0 && core > 0) {
+          core = lerp(core, terrace(Math.min(core, 0.999999), 9, 0.24), styleCfg.strata);
+        }
 
-        // 8. Summit emphasis: single dominant peak where the ridges converge;
-        //    bulky mass keeps a proportionally taller central summit
-        core += Math.exp(-d * d * 22) * (0.15 + (bulk === 'high' ? 0.22 : 0));
-
-        // 9. Quiet plains + foothill skirt fanning from the base
-        const plain = (plainFBM.sample(u * 1.5 + 3, v * 1.5 + 7) * 0.5 + 0.5) * 0.03
-          + Math.exp(-Math.max(0, d - 1) * 1.5) * 0.05;
+        // 8. Quiet plains + foothill skirt fanning from the base
+        const plain = (plainFBM.sample(u * 1.5 + 3, v * 1.5 + 7) * 0.5 + 0.5) * 0.025
+          + Math.exp(-Math.max(0, d - 1) * 1.5) * 0.04;
 
         h.set(x, y, Math.max(0, plain + core * heightMult));
       }
     }
+
+    // Old mountains: smooth crests back toward rounded ancient domes
+    if (styleCfg.soften > 0) blurHeightmap(h, styleCfg.soften);
+
     return h.normalize();
   }
 };
